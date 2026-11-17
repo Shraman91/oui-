@@ -1,0 +1,30 @@
+.oui-fruitninja-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fdf2f8;
+  overflow: hidden;
+  user-select: none;
+}
+
+.oui-fruitninja-canvas-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+}
+
+.oui-fruitninja-canvas-container canvas {
+  display: block;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+  border: 3.5px solid #3b1d28;
+  box-shadow: 6px 6px 0px #f472b6;
+  border-radius: 12px;
+}
