@@ -7,6 +7,7 @@ import { BootSplash } from '../menu/BootSplash';
 import { SettingsOverlay } from '../menu/SettingsOverlay';
 import { SketchboardGame } from '../games/sketchboard/SketchboardGame';
 import { FruitNinjaGame } from '../games/fruitninja/FruitNinjaGame';
+import { SpaceFighterGame } from '../games/spacefighter/SpaceFighterGame';
 import { PlaceholderGame } from '../games/placeholder/PlaceholderGame';
 
 class OuiConsoleApp {
@@ -101,6 +102,9 @@ class OuiConsoleApp {
       void this.sceneManager.loadGame(game);
     } else if (channelId === 'fruitninja') {
       const game = new FruitNinjaGame();
+      void this.sceneManager.loadGame(game);
+    } else if (channelId === 'spacefighter') {
+      const game = new SpaceFighterGame();
       void this.sceneManager.loadGame(game);
     } else {
       const game = new PlaceholderGame(channelId, title);
