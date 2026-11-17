@@ -1,4 +1,4 @@
-/* Wii Boot Splash Animation Styles */
+/* Cute Flat Pixel Boot Splash (Zero Gradients) */
 
 .oui-splash-container {
   position: fixed;
@@ -8,135 +8,99 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 50% 45%, #ffffff 0%, #f0f4f8 60%, #dbe4ee 100%);
+  background-color: #f8fafc;
   user-select: none;
   cursor: pointer;
-  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .oui-splash-container.fading-out {
   opacity: 0;
-  transform: scale(1.05);
+  transform: scale(1.03);
   pointer-events: none;
 }
 
-.oui-splash-content {
+.oui-splash-box {
+  background-color: #ffffff;
+  border: 3px solid #1e293b;
+  box-shadow: 6px 6px 0px #1e293b;
+  border-radius: 24px;
+  padding: 3rem 4rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
+  gap: 1.5rem;
+  animation: oui-splash-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* Ambient glowing ring (like Wii disc slot glow) */
-.oui-splash-glow {
-  position: absolute;
-  width: 320px;
-  height: 320px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.28) 0%, rgba(2, 132, 199, 0.08) 50%, transparent 70%);
-  filter: blur(20px);
-  animation: oui-pulse-glow 1.5s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-
-@keyframes oui-pulse-glow {
+@keyframes oui-splash-pop {
   0% {
-    transform: scale(0.85);
-    opacity: 0.5;
+    transform: scale(0.8);
+    opacity: 0;
   }
   100% {
-    transform: scale(1.2);
-    opacity: 0.9;
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
-/* Main animated logo */
 .oui-splash-logo {
   font-family: 'Comfortaa', cursive, sans-serif;
-  font-size: 5rem;
+  font-size: 4.5rem;
   font-weight: 700;
   color: #1e293b;
-  letter-spacing: -0.05em;
   display: flex;
   align-items: center;
-  gap: 0.15rem;
-  z-index: 1;
-  animation: oui-logo-intro 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  gap: 0.35rem;
+  line-height: 1;
 }
 
-@keyframes oui-logo-intro {
-  0% {
-    opacity: 0;
-    transform: scale(0.6) translateY(20px);
-  }
-  70% {
+/* Cute animated pixel eyes */
+.oui-pixel-eyes-svg {
+  width: 72px;
+  height: 48px;
+  shape-rendering: crispEdges;
+  animation: oui-pixel-blink 2.2s infinite steps(1);
+}
+
+@keyframes oui-pixel-blink {
+  0%, 85%, 100% {
+    /* open happy eyes ^^ */
     opacity: 1;
-    transform: scale(1.05) translateY(-5px);
   }
-  100% {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
-
-/* The happy ^^ eyes */
-.oui-splash-eyes {
-  color: #0284c7;
-  font-size: 4.8rem;
-  display: inline-block;
-  transform-origin: center bottom;
-  animation: oui-eyes-wink 1.4s ease-in-out forwards;
-}
-
-@keyframes oui-eyes-wink {
-  0%, 35% {
-    transform: scale(1);
-  }
-  45% {
-    transform: scale(1.15, 0.2);
-  }
-  55% {
-    transform: scale(0.9, 1.2);
-  }
-  65%, 100% {
-    transform: scale(1, 1);
+  90% {
+    /* blink line -- */
+    opacity: 0.2;
   }
 }
 
-/* Wii-like strapline */
-.oui-splash-subtitle {
-  font-family: 'Nunito', sans-serif;
-  font-size: 1.15rem;
+.oui-splash-badge {
+  background-color: #e0f2fe;
+  border: 2px solid #0284c7;
+  color: #0369a1;
+  font-family: 'Comfortaa', monospace, sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.3rem 0.9rem;
+  border-radius: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.oui-splash-prompt {
+  font-size: 0.85rem;
   font-weight: 700;
   color: #64748b;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  margin-top: 1rem;
-  opacity: 0;
-  animation: oui-sub-intro 0.6s ease-out 0.4s forwards;
-  z-index: 1;
+  margin-top: 1.5rem;
+  letter-spacing: 0.05em;
+  animation: oui-prompt-pulse 1.2s infinite alternate;
 }
 
-@keyframes oui-sub-intro {
+@keyframes oui-prompt-pulse {
   0% {
-    opacity: 0;
-    transform: translateY(10px);
+    opacity: 0.4;
   }
   100% {
     opacity: 1;
-    transform: translateY(0);
   }
-}
-
-/* Quick skip prompt */
-.oui-splash-prompt {
-  position: absolute;
-  bottom: 2.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #94a3b8;
-  letter-spacing: 0.05em;
-  opacity: 0;
-  animation: oui-sub-intro 0.4s ease-out 0.8s forwards;
 }

@@ -5,7 +5,7 @@ export interface BootSplashOptions {
   container: HTMLElement;
   inputManager?: InputManager;
   onComplete: () => void;
-  durationMs?: number; // default 1500ms (< 2 seconds requirement)
+  durationMs?: number; // default 1500ms
 }
 
 export class BootSplash {
@@ -31,14 +31,28 @@ export class BootSplash {
     this.rootElement.className = 'oui-splash-container';
 
     this.rootElement.innerHTML = `
-      <div class="oui-splash-glow"></div>
-      <div class="oui-splash-content">
+      <div class="oui-splash-box">
         <div class="oui-splash-logo">
-          oui<span class="oui-splash-eyes">^^</span>
+          <span>oui</span>
+          <svg viewBox="0 0 24 16" class="oui-pixel-eyes-svg" shape-rendering="crispEdges">
+            <!-- Left pixel eye ^ -->
+            <rect x="2" y="7" width="2" height="3" fill="#0284c7"/>
+            <rect x="4" y="4" width="2" height="3" fill="#0284c7"/>
+            <rect x="6" y="2" width="2" height="2" fill="#0284c7"/>
+            <rect x="8" y="4" width="2" height="3" fill="#0284c7"/>
+            <rect x="10" y="7" width="2" height="3" fill="#0284c7"/>
+
+            <!-- Right pixel eye ^ -->
+            <rect x="13" y="7" width="2" height="3" fill="#0284c7"/>
+            <rect x="15" y="4" width="2" height="3" fill="#0284c7"/>
+            <rect x="17" y="2" width="2" height="2" fill="#0284c7"/>
+            <rect x="19" y="4" width="2" height="3" fill="#0284c7"/>
+            <rect x="21" y="7" width="2" height="3" fill="#0284c7"/>
+          </svg>
         </div>
-        <div class="oui-splash-subtitle">Browser Game Console</div>
+        <div class="oui-splash-badge">Wii Browser Console</div>
       </div>
-      <div class="oui-splash-prompt">Press A or Click to skip</div>
+      <div class="oui-splash-prompt">Press A or Click to Start</div>
     `;
 
     // Click to skip
@@ -80,7 +94,7 @@ export class BootSplash {
       setTimeout(() => {
         this.destroy();
         this.onComplete();
-      }, 350);
+      }, 250);
     } else {
       this.onComplete();
     }

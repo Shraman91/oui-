@@ -1,5 +1,6 @@
 import './settings.css';
 import { InputManager } from '../input/InputManager';
+import { PIXEL_ICONS } from '../shared/pixelIcons';
 
 export interface SettingsOverlayOptions {
   container: HTMLElement;
@@ -63,14 +64,15 @@ export class SettingsOverlay {
       <div class="oui-settings-modal">
         <div class="oui-settings-header">
           <div class="oui-settings-title">
-            <span>⚙️</span> Wii Console Settings
+            <span style="display:inline-flex; align-items:center;">${PIXEL_ICONS.gear}</span>
+            <span>Console Settings</span>
           </div>
           <button class="oui-settings-close-btn" id="oui-settings-close-btn">&times;</button>
         </div>
 
         <div class="oui-settings-body">
           <div>
-            <div class="oui-settings-section-title">Input Provider</div>
+            <div class="oui-settings-section-title">[ Input Providers ]</div>
             <div class="oui-provider-list" id="oui-provider-list">
               ${providers.map((p) => `
                 <div class="oui-provider-item ${p.id === activeProvider?.id ? 'active' : ''}" data-provider-id="${p.id}">
@@ -85,7 +87,7 @@ export class SettingsOverlay {
           </div>
 
           <div>
-            <div class="oui-settings-section-title">Controller Telemetry</div>
+            <div class="oui-settings-section-title">[ Controller Telemetry ]</div>
             <div class="oui-telemetry-grid">
               <div class="oui-telemetry-item">
                 <span class="oui-telemetry-label">Pointer Coordinates</span>
@@ -104,20 +106,19 @@ export class SettingsOverlay {
                 <span class="oui-telemetry-value" id="oui-tel-swing">${this.lastSwingInfo}</span>
               </div>
               <div class="oui-telemetry-buttons">
-                <div class="oui-btn-pill-indicator" id="oui-tel-btn-a">Button A</div>
-                <div class="oui-btn-pill-indicator" id="oui-tel-btn-b">Button B</div>
+                <div class="oui-btn-pill-indicator" id="oui-tel-btn-a">BUTTON A</div>
+                <div class="oui-btn-pill-indicator" id="oui-tel-btn-b">BUTTON B</div>
               </div>
             </div>
           </div>
         </div>
 
         <div class="oui-settings-footer">
-          <button class="oui-settings-done-btn" id="oui-settings-done-btn">OK</button>
+          <button class="oui-settings-done-btn" id="oui-settings-done-btn">Done</button>
         </div>
       </div>
     `;
 
-    // Hook events
     const closeBtn = this.backdropElement.querySelector('#oui-settings-close-btn');
     const doneBtn = this.backdropElement.querySelector('#oui-settings-done-btn');
     closeBtn?.addEventListener('click', () => this.close());

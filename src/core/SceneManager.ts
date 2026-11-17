@@ -86,7 +86,12 @@ export class SceneManager {
     // Add in-game pause button (accessible via pointer)
     const pauseBtn = document.createElement('button');
     pauseBtn.className = 'oui-ingame-pause-btn';
-    pauseBtn.innerHTML = '&#10074;&#10074;';
+    pauseBtn.innerHTML = `
+      <span style="display:inline-flex; width:12px; height:12px; justify-content:space-between;">
+        <span style="width:3px; height:12px; background-color:#1e293b;"></span>
+        <span style="width:3px; height:12px; background-color:#1e293b;"></span>
+      </span>
+    `;
     pauseBtn.title = 'Pause (Esc)';
     pauseBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -170,63 +175,66 @@ export class SceneManager {
     this.pauseOverlay.style.display = 'none';
     this.pauseOverlay.style.position = 'absolute';
     this.pauseOverlay.style.inset = '0';
-    this.pauseOverlay.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
-    this.pauseOverlay.style.backdropFilter = 'blur(8px)';
+    this.pauseOverlay.style.backgroundColor = 'rgba(15, 23, 42, 0.65)';
     this.pauseOverlay.style.zIndex = '1000';
     this.pauseOverlay.style.flexDirection = 'column';
     this.pauseOverlay.style.alignItems = 'center';
     this.pauseOverlay.style.justifyContent = 'center';
-    this.pauseOverlay.style.gap = '1.25rem';
 
     this.pauseOverlay.innerHTML = `
       <div class="oui-pause-card" style="
-        background: #ffffff;
-        border-radius: 28px;
-        padding: 2.5rem 3.5rem;
-        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
+        background-color: #ffffff;
+        border-radius: 20px;
+        padding: 2.5rem 3rem;
+        box-shadow: 8px 8px 0px #1e293b;
+        border: 3px solid #1e293b;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 1.5rem;
-        min-width: 340px;
+        min-width: 320px;
         text-align: center;
-        border: 2px solid rgba(255,255,255,0.9);
       ">
-        <h2 style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 2.2rem; color: #1e293b; margin: 0;">Paused</h2>
+        <h2 style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 2rem; color: #1e293b; margin: 0;">Game Paused</h2>
         <div style="display: flex; flex-direction: column; gap: 0.85rem; width: 100%;">
           <button id="oui-btn-resume" style="
-            background: #0284c7;
+            background-color: #0284c7;
             color: #ffffff;
-            border: none;
-            padding: 0.9rem 1.6rem;
-            border-radius: 9999px;
-            font-size: 1.15rem;
+            border: 2px solid #1e293b;
+            box-shadow: 3px 3px 0px #1e293b;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 14px rgba(2,132,199,0.35);
-            transition: transform 0.15s, background-color 0.15s;
+            font-family: 'Comfortaa', sans-serif;
+            transition: transform 0.1s ease;
           ">Resume</button>
           <button id="oui-btn-restart" style="
-            background: #f1f5f9;
-            color: #334155;
-            border: 2px solid #e2e8f0;
-            padding: 0.85rem 1.5rem;
-            border-radius: 9999px;
-            font-size: 1.05rem;
-            font-weight: 600;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            border: 2px solid #1e293b;
+            box-shadow: 3px 3px 0px #1e293b;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.15s, background-color 0.15s;
+            font-family: 'Comfortaa', sans-serif;
+            transition: transform 0.1s ease;
           ">Restart Game</button>
           <button id="oui-btn-menu" style="
-            background: #f1f5f9;
-            color: #334155;
-            border: 2px solid #e2e8f0;
-            padding: 0.85rem 1.5rem;
-            border-radius: 9999px;
-            font-size: 1.05rem;
-            font-weight: 600;
+            background-color: #f1f5f9;
+            color: #1e293b;
+            border: 2px solid #1e293b;
+            box-shadow: 3px 3px 0px #1e293b;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: transform 0.15s, background-color 0.15s;
+            font-family: 'Comfortaa', sans-serif;
+            transition: transform 0.1s ease;
           ">Return to Wii Menu</button>
         </div>
       </div>

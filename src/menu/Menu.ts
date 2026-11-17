@@ -1,10 +1,11 @@
 import './menu.css';
 import { InputManager } from '../input/InputManager';
+import { PIXEL_ICONS } from '../shared/pixelIcons';
 
 export interface ChannelInfo {
   id: string;
   title: string;
-  icon: string;
+  pixelSvg: string;
   description: string;
   techTag: string;
   screenClass: string;
@@ -14,31 +15,31 @@ export const CHANNELS: readonly ChannelInfo[] = [
   {
     id: 'sketchboard',
     title: 'Sketchboard',
-    icon: '🎨',
-    description: 'Freehand canvas drawing & color picker',
+    pixelSvg: PIXEL_ICONS.sketchboard,
+    description: 'Freehand canvas drawing & colors',
     techTag: 'Canvas',
     screenClass: 'oui-screen-sketchboard'
   },
   {
     id: 'fruitninja',
     title: 'Fruit Ninja',
-    icon: '🍉',
-    description: 'Blade slicing, juicy combos & bombs',
+    pixelSvg: PIXEL_ICONS.fruitninja,
+    description: 'Blade slicing & juicy combos',
     techTag: 'Phaser 3',
     screenClass: 'oui-screen-fruitninja'
   },
   {
     id: 'spacefighter',
     title: 'Space Fighter',
-    icon: '🚀',
-    description: 'Tilt steering, alien waves & boss fights',
+    pixelSvg: PIXEL_ICONS.spacefighter,
+    description: 'Tilt steering & alien waves',
     techTag: 'Phaser 3',
     screenClass: 'oui-screen-spacefighter'
   },
   {
     id: 'tabletennis',
     title: 'Table Tennis',
-    icon: '🏓',
+    pixelSvg: PIXEL_ICONS.tabletennis,
     description: '3D motion physics & paddle swing',
     techTag: 'Three.js',
     screenClass: 'oui-screen-tabletennis'
@@ -77,17 +78,33 @@ export class Menu {
     this.rootElement = document.createElement('div');
     this.rootElement.className = 'oui-menu-wrapper oui-menu-entering';
 
-    // Header
+    // Header with cute pixel eyes SVG
     const header = document.createElement('header');
     header.className = 'oui-menu-header';
     header.innerHTML = `
       <div class="oui-logo-title">
-        oui<span class="eyes">^^</span>
+        <span>oui</span>
+        <svg viewBox="0 0 24 16" class="oui-header-pixel-eyes" shape-rendering="crispEdges">
+          <!-- Left pixel eye ^ -->
+          <rect x="2" y="7" width="2" height="3" fill="#0284c7"/>
+          <rect x="4" y="4" width="2" height="3" fill="#0284c7"/>
+          <rect x="6" y="2" width="2" height="2" fill="#0284c7"/>
+          <rect x="8" y="4" width="2" height="3" fill="#0284c7"/>
+          <rect x="10" y="7" width="2" height="3" fill="#0284c7"/>
+
+          <!-- Right pixel eye ^ -->
+          <rect x="13" y="7" width="2" height="3" fill="#0284c7"/>
+          <rect x="15" y="4" width="2" height="3" fill="#0284c7"/>
+          <rect x="17" y="2" width="2" height="2" fill="#0284c7"/>
+          <rect x="19" y="4" width="2" height="3" fill="#0284c7"/>
+          <rect x="21" y="7" width="2" height="3" fill="#0284c7"/>
+        </svg>
       </div>
       <div class="oui-header-status">
-        <div class="oui-provider-badge" id="oui-header-provider-badge" title="Click or Press Tab for Settings">
+        <div class="oui-provider-badge" id="oui-header-provider-badge" title="Controller Settings (Tab)">
           <span class="oui-provider-dot"></span>
           <span id="oui-active-provider-name">Mouse & Keyboard</span>
+          <div class="oui-battery-icon">${PIXEL_ICONS.battery}</div>
         </div>
       </div>
     `;
@@ -112,8 +129,8 @@ export class Menu {
 
       tile.innerHTML = `
         <div class="oui-channel-screen ${channel.screenClass}">
-          <span class="oui-channel-tag">${channel.techTag}</span>
-          <div class="oui-channel-icon">${channel.icon}</div>
+          <span class="oui-channel-tag">[${channel.techTag}]</span>
+          <div class="oui-channel-icon">${channel.pixelSvg}</div>
         </div>
         <div class="oui-channel-info-strip">
           <h3 class="oui-channel-title">${channel.title}</h3>
@@ -147,15 +164,15 @@ export class Menu {
     const footer = document.createElement('footer');
     footer.className = 'oui-menu-footer';
     footer.innerHTML = `
-      <button class="oui-pill-btn" id="oui-btn-wii-options" title="Wii Settings (Tab)">
-        <span>⚙️</span> Wii Options
+      <button class="oui-pill-btn" id="oui-btn-wii-options" title="Settings (Tab)">
+        <span class="oui-btn-icon">${PIXEL_ICONS.gear}</span> Options
       </button>
       <div class="oui-footer-center">
         <div class="oui-clock" id="oui-menu-clock">--:--</div>
         <div class="oui-date" id="oui-menu-date">--- --</div>
       </div>
       <button class="oui-pill-btn" id="oui-btn-wii-msg" title="Console Info">
-        <span>✉️</span> Info
+        <span class="oui-btn-icon">${PIXEL_ICONS.envelope}</span> Info
       </button>
     `;
 
@@ -209,10 +226,9 @@ export class Menu {
       this.rootElement.classList.add('oui-menu-launching');
     }
 
-    // Smooth Wii channel zoom delay before mounting game scene
     setTimeout(() => {
       this.onSelectChannel(channelId, tile);
-    }, 380);
+    }, 280);
   }
 
   private startClock(): void {

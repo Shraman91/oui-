@@ -1,5 +1,6 @@
 import './cursor.css';
 import { InputManager } from './InputManager';
+import { PIXEL_ICONS } from '../shared/pixelIcons';
 
 export interface CursorOptions {
   inputManager: InputManager;
@@ -25,53 +26,30 @@ export class Cursor {
   }
 
   public mount(): void {
-    // Enable custom cursor mode on body
     document.body.classList.add('oui-custom-cursor');
 
     this.cursorElement = document.createElement('div');
     this.cursorElement.className = 'oui-hand-cursor';
 
-    // Authentic Wii Glove Hand SVG
     this.cursorElement.innerHTML = `
-      <svg class="oui-hand-icon" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Glove Shadow Base -->
-        <path d="M28 20 C28 15, 36 15, 36 20 L36 44 L45 42 C50 41, 53 45, 52 50 L49 60 L62 55 C67 53, 71 58, 69 63 L60 76 L71 73 C76 72, 79 77, 76 82 L65 94 C57 101, 38 99, 29 90 L16 75 C10 68, 14 58, 22 60 L28 62 Z" fill="#000000" opacity="0.18" transform="translate(3, 4)" />
-        
-        <!-- Glove Body Outline -->
-        <path d="M26 18 C26 11, 35 11, 35 18 L35 44 L44 42 C49 41, 53 45, 52 50 L49 60 L62 55 C67 53, 71 58, 69 63 L60 76 L71 73 C76 72, 79 77, 76 82 L65 94 C57 101, 38 99, 29 90 L16 75 C10 68, 14 58, 22 60 L26 62 Z" fill="#1e293b" />
-        
-        <!-- Glove Fill (White/Silver Gradient) -->
-        <path d="M28 20 C28 15, 33 15, 33 20 L33 46 C33 48, 35 49, 37 48 L44 45 C47 44, 50 47, 49 50 L47 62 C47 64, 49 65, 51 64 L62 58 C65 57, 68 60, 67 63 L58 78 C57 80, 59 82, 61 81 L71 76 C74 75, 77 79, 74 82 L64 92 C58 98, 40 96, 32 88 L19 73 C15 68, 18 61, 24 62 L28 63 Z" fill="url(#gloveGrad)" />
-
-        <!-- Glove Seam & Cuff Details -->
-        <path d="M28 84 C34 90, 48 91, 58 87" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round" />
-        <circle cx="31" cy="23" r="2.5" fill="#e2e8f0" />
-
-        <defs>
-          <linearGradient id="gloveGrad" x1="20" y1="15" x2="65" y2="95" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#ffffff" />
-            <stop offset="0.75" stop-color="#f8fafc" />
-            <stop offset="1" stop-color="#e2e8f0" />
-          </linearGradient>
-        </defs>
-      </svg>
+      <div class="oui-pixel-hand-svg">
+        ${PIXEL_ICONS.pixelHand}
+      </div>
       ${this.showPlayerBadge ? '<div class="oui-player-badge">P1</div>' : ''}
     `;
 
     this.container.appendChild(this.cursorElement);
 
-    // Event hooks
     this.unsubPressA = this.inputManager.on('pressA', () => this.handlePressA());
     this.unsubReleaseA = this.inputManager.on('releaseA', () => this.handleReleaseA());
 
-    // Main animation loop
     this.startLoop();
   }
 
   private handlePressA(): void {
     if (this.cursorElement) {
       this.cursorElement.classList.add('clicking');
-      this.spawnRipple();
+      this.spawnSparks();
     }
   }
 
@@ -81,12 +59,27 @@ export class Cursor {
     }
   }
 
-  private spawnRipple(): void {
+  private spawnSparks(): void {
     if (!this.cursorElement) return;
-    const ripple = document.createElement('div');
-    ripple.className = 'oui-cursor-ripple';
-    this.cursorElement.appendChild(ripple);
-    setTimeout(() => ripple.remove(), 400);
+
+    // Spawn 4 cute pixel sparks popping out diagonally
+    const offsets = [
+      { dx: '-10px', dy: '-10px' },
+      { dx: '10px', dy: '-10px' },
+      { dx: '-10px', dy: '10px' },
+      { dx: '10px', dy: '10px' }
+    ];
+
+    for (const offset of offsets) {
+      const spark = document.createElement('div');
+      spark.className = 'oui-pixel-spark';
+      spark.style.top = '6px';
+      spark.style.left = '6px';
+      spark.style.setProperty('--dx', offset.dx);
+      spark.style.setProperty('--dy', offset.dy);
+      this.cursorElement.appendChild(spark);
+      setTimeout(() => spark.remove(), 260);
+    }
   }
 
   private startLoop(): void {
