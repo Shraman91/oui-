@@ -5,6 +5,7 @@ import { SceneManager } from './SceneManager';
 import { Menu, CHANNELS } from '../menu/Menu';
 import { BootSplash } from '../menu/BootSplash';
 import { SettingsOverlay } from '../menu/SettingsOverlay';
+import { SketchboardGame } from '../games/sketchboard/SketchboardGame';
 import { PlaceholderGame } from '../games/placeholder/PlaceholderGame';
 
 class OuiConsoleApp {
@@ -94,8 +95,13 @@ class OuiConsoleApp {
     }
 
     // Launch Game
-    const game = new PlaceholderGame(channelId, title);
-    void this.sceneManager.loadGame(game);
+    if (channelId === 'sketchboard') {
+      const game = new SketchboardGame();
+      void this.sceneManager.loadGame(game);
+    } else {
+      const game = new PlaceholderGame(channelId, title);
+      void this.sceneManager.loadGame(game);
+    }
   }
 }
 
