@@ -1,5 +1,6 @@
 import { Game } from './Game';
 import { InputManager } from '../input/InputManager';
+import '../menu/transitions.css';
 
 export interface SceneManagerOptions {
   container: HTMLElement;
@@ -18,6 +19,7 @@ export class SceneManager {
 
   private sceneContainer: HTMLElement;
   private pauseOverlay: HTMLElement;
+  private flashOverlay: HTMLElement;
   private onReturnToMenuCallback?: () => void;
 
   private onKeyDownBound: (e: KeyboardEvent) => void;
@@ -34,6 +36,11 @@ export class SceneManager {
     this.sceneContainer.style.height = '100%';
     this.sceneContainer.style.position = 'relative';
     this.container.appendChild(this.sceneContainer);
+
+    // Build white transition flash overlay
+    this.flashOverlay = document.createElement('div');
+    this.flashOverlay.className = 'oui-transition-flash';
+    this.container.appendChild(this.flashOverlay);
 
     // Build pause overlay
     this.pauseOverlay = document.createElement('div');
@@ -60,7 +67,7 @@ export class SceneManager {
   }
 
   /**
-   * Loads a game instance, mounts it into the container, and initiates its lifecycle.
+   * Loads a game instance, mounts it into the container, and initiates its lifecycle with Wii zoom transition.
    */
   public async loadGame(game: Game): Promise<void> {
     if (this.activeGame) {
@@ -69,6 +76,9 @@ export class SceneManager {
 
     this.isPaused = false;
     this.hidePauseOverlay();
+
+    // Trigger brief white flash for authentic Wii Channel launch
+    this.triggerFlash();
 
     this.activeGame = game;
     this.sceneContainer.innerHTML = '';
@@ -94,15 +104,26 @@ export class SceneManager {
   }
 
   /**
-   * Tears down active game and returns to the menu shell.
+   * Tears down active game with smooth exit animation and returns to the menu shell.
    */
   public returnToMenu(): void {
-    this.destroyActiveGame();
     this.hidePauseOverlay();
     this.isPaused = false;
 
-    if (this.onReturnToMenuCallback) {
-      this.onReturnToMenuCallback();
+    const currentViewport = this.sceneContainer.querySelector('.oui-game-viewport');
+    if (currentViewport) {
+      currentViewport.classList.add('oui-game-exiting');
+      setTimeout(() => {
+        this.destroyActiveGame();
+        if (this.onReturnToMenuCallback) {
+          this.onReturnToMenuCallback();
+        }
+      }, 260);
+    } else {
+      this.destroyActiveGame();
+      if (this.onReturnToMenuCallback) {
+        this.onReturnToMenuCallback();
+      }
     }
   }
 
@@ -126,6 +147,13 @@ export class SceneManager {
     }
   }
 
+  private triggerFlash(): void {
+    this.flashOverlay.classList.add('active');
+    setTimeout(() => {
+      this.flashOverlay.classList.remove('active');
+    }, 280);
+  }
+
   private destroyActiveGame(): void {
     if (this.activeGame) {
       try {
@@ -143,7 +171,7 @@ export class SceneManager {
     this.pauseOverlay.style.position = 'absolute';
     this.pauseOverlay.style.inset = '0';
     this.pauseOverlay.style.backgroundColor = 'rgba(15, 23, 42, 0.75)';
-    this.pauseOverlay.style.backdropFilter = 'blur(6px)';
+    this.pauseOverlay.style.backdropFilter = 'blur(8px)';
     this.pauseOverlay.style.zIndex = '1000';
     this.pauseOverlay.style.flexDirection = 'column';
     this.pauseOverlay.style.alignItems = 'center';
@@ -153,34 +181,35 @@ export class SceneManager {
     this.pauseOverlay.innerHTML = `
       <div class="oui-pause-card" style="
         background: #ffffff;
-        border-radius: 24px;
-        padding: 2.5rem 3rem;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+        border-radius: 28px;
+        padding: 2.5rem 3.5rem;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3);
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 1.5rem;
-        min-width: 320px;
+        min-width: 340px;
         text-align: center;
+        border: 2px solid rgba(255,255,255,0.9);
       ">
-        <h2 style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 2rem; color: #1e293b; margin: 0;">Paused</h2>
-        <div style="display: flex; flex-direction: column; gap: 0.75rem; width: 100%;">
+        <h2 style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 2.2rem; color: #1e293b; margin: 0;">Paused</h2>
+        <div style="display: flex; flex-direction: column; gap: 0.85rem; width: 100%;">
           <button id="oui-btn-resume" style="
-            background: #2563eb;
+            background: #0284c7;
             color: #ffffff;
             border: none;
-            padding: 0.85rem 1.5rem;
+            padding: 0.9rem 1.6rem;
             border-radius: 9999px;
-            font-size: 1.1rem;
+            font-size: 1.15rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+            box-shadow: 0 4px 14px rgba(2,132,199,0.35);
             transition: transform 0.15s, background-color 0.15s;
           ">Resume</button>
           <button id="oui-btn-restart" style="
             background: #f1f5f9;
             color: #334155;
-            border: none;
+            border: 2px solid #e2e8f0;
             padding: 0.85rem 1.5rem;
             border-radius: 9999px;
             font-size: 1.05rem;
@@ -191,7 +220,7 @@ export class SceneManager {
           <button id="oui-btn-menu" style="
             background: #f1f5f9;
             color: #334155;
-            border: none;
+            border: 2px solid #e2e8f0;
             padding: 0.85rem 1.5rem;
             border-radius: 9999px;
             font-size: 1.05rem;
@@ -264,6 +293,7 @@ export class SceneManager {
     window.removeEventListener('keydown', this.onKeyDownBound);
     this.destroyActiveGame();
     this.pauseOverlay.remove();
+    this.flashOverlay.remove();
     this.sceneContainer.remove();
   }
 }

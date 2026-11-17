@@ -1,0 +1,244 @@
+/* Wii Settings / Options Modal */
+
+.oui-settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+
+.oui-settings-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.oui-settings-modal {
+  background: #ffffff;
+  width: 90%;
+  max-width: 650px;
+  border-radius: 32px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: scale(0.92);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+.oui-settings-backdrop.open .oui-settings-modal {
+  transform: scale(1);
+}
+
+/* Header */
+.oui-settings-header {
+  background: linear-gradient(180deg, #f8fafc 0%, #edf2f7 100%);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.oui-settings-title {
+  font-family: 'Comfortaa', cursive, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.oui-settings-close-btn {
+  background: #e2e8f0;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, transform 0.15s;
+}
+
+.oui-settings-close-btn:hover {
+  background: #cbd5e1;
+  transform: scale(1.08);
+}
+
+/* Body */
+.oui-settings-body {
+  padding: 1.75rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.oui-settings-section-title {
+  font-family: 'Comfortaa', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0369a1;
+  margin-bottom: 0.6rem;
+}
+
+/* Providers List */
+.oui-provider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.oui-provider-item {
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 0.9rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.oui-provider-item:hover {
+  border-color: #38bdf8;
+  background: #f0f9ff;
+  transform: translateX(4px);
+}
+
+.oui-provider-item.active {
+  border-color: #0284c7;
+  background: #e0f2fe;
+}
+
+.oui-provider-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.oui-provider-item-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.oui-provider-item-desc {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.oui-provider-active-badge {
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Telemetry Grid */
+.oui-telemetry-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  background: #0f172a;
+  border-radius: 20px;
+  padding: 1.25rem;
+  color: #e2e8f0;
+  font-family: monospace;
+  font-size: 0.85rem;
+}
+
+.oui-telemetry-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.oui-telemetry-label {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.oui-telemetry-value {
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+/* Button Status indicators */
+.oui-telemetry-buttons {
+  grid-column: span 2;
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.oui-btn-pill-indicator {
+  flex: 1;
+  padding: 0.45rem;
+  border-radius: 10px;
+  background: #1e293b;
+  text-align: center;
+  font-weight: 700;
+  transition: all 0.15s ease;
+}
+
+.oui-btn-pill-indicator.active-a {
+  background: #22c55e;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+}
+
+.oui-btn-pill-indicator.active-b {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(2, 132, 199, 0.5);
+}
+
+/* Footer */
+.oui-settings-footer {
+  padding: 1.25rem 2rem;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.oui-settings-done-btn {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  font-family: 'Comfortaa', sans-serif;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.65rem 2rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  transition: all 0.15s ease;
+}
+
+.oui-settings-done-btn:hover {
+  background: #0369a1;
+  transform: scale(1.04);
+}

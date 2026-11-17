@@ -1,18 +1,20 @@
 import { InputManager } from '../input/InputManager';
 import { MouseProvider } from '../input/providers/MouseProvider';
+import { Cursor } from '../input/Cursor';
 import { SceneManager } from './SceneManager';
 import { Menu, CHANNELS } from '../menu/Menu';
+import { BootSplash } from '../menu/BootSplash';
+import { SettingsOverlay } from '../menu/SettingsOverlay';
 import { PlaceholderGame } from '../games/placeholder/PlaceholderGame';
 
 class OuiConsoleApp {
   private appElement: HTMLElement;
   private inputManager: InputManager;
   private mouseProvider: MouseProvider;
+  private cursor: Cursor;
   private sceneManager: SceneManager;
+  private settingsOverlay: SettingsOverlay;
   private menu: Menu | null = null;
-  private debugHud: HTMLElement | null = null;
-  private isHudVisible = false;
-  private lastSwingInfo = 'None';
 
   constructor() {
     const root = document.getElementById('app');
@@ -26,23 +28,44 @@ class OuiConsoleApp {
     this.mouseProvider = new MouseProvider(this.inputManager, this.appElement);
     this.inputManager.registerProvider(this.mouseProvider);
 
-    // Track swing events for debug overlay
-    this.inputManager.on('swing', (payload) => {
-      this.lastSwingInfo = `${payload.speed.toFixed(1)} u/s (${payload.direction.x.toFixed(2)}, ${payload.direction.y.toFixed(2)})`;
+    // 2. Initialize Wii Hand Cursor
+    this.cursor = new Cursor({
+      inputManager: this.inputManager,
+      container: this.appElement,
+      showPlayerBadge: true
+    });
+    this.cursor.mount();
+
+    // 3. Initialize Settings & Telemetry Overlay (Tab key / Wii Options button)
+    this.settingsOverlay = new SettingsOverlay({
+      container: this.appElement,
+      inputManager: this.inputManager,
+      onProviderChange: () => {
+        this.menu?.updateProviderBadge();
+      }
     });
 
-    // 2. Initialize Scene Manager
+    // 4. Initialize Scene Manager
     this.sceneManager = new SceneManager({
       container: this.appElement,
       inputManager: this.inputManager,
       onReturnToMenu: () => this.showMenu()
     });
 
-    // 3. Initialize Debug HUD
-    this.initDebugHud();
+    // 5. Play Boot Splash before showing menu
+    this.playBootSplash();
+  }
 
-    // 4. Start in Menu
-    this.showMenu();
+  private playBootSplash(): void {
+    const splash = new BootSplash({
+      container: this.appElement,
+      inputManager: this.inputManager,
+      durationMs: 1500, // < 2 seconds requirement
+      onComplete: () => {
+        this.showMenu();
+      }
+    });
+    splash.show();
   }
 
   private showMenu(): void {
@@ -53,7 +76,8 @@ class OuiConsoleApp {
     this.menu = new Menu({
       container: this.sceneManager.getSceneContainer(),
       inputManager: this.inputManager,
-      onSelectChannel: (channelId: string) => this.handleChannelSelect(channelId)
+      onSelectChannel: (channelId: string) => this.handleChannelSelect(channelId),
+      onOpenSettings: () => this.settingsOverlay.open()
     });
 
     this.menu.mount();
@@ -72,49 +96,6 @@ class OuiConsoleApp {
     // Launch Game
     const game = new PlaceholderGame(channelId, title);
     void this.sceneManager.loadGame(game);
-  }
-
-  private initDebugHud(): void {
-    this.debugHud = document.createElement('div');
-    this.debugHud.className = 'oui-debug-hud';
-    this.debugHud.style.display = 'none';
-
-    this.appElement.appendChild(this.debugHud);
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        this.toggleHud();
-      }
-    });
-
-    // Update HUD loop
-    const updateHud = () => {
-      if (this.isHudVisible && this.debugHud) {
-        const state = this.inputManager.getState();
-        const provider = this.inputManager.getActiveProvider();
-        this.debugHud.innerHTML = `
-          <h4>oui^^ Input HUD [Tab]</h4>
-          <div><strong>Provider:</strong> ${provider?.name ?? 'None'}</div>
-          <div><strong>Pointer:</strong> (${state.pointer.x.toFixed(3)}, ${state.pointer.y.toFixed(3)})</div>
-          <div><strong>Velocity:</strong> (${state.pointerVelocity.x.toFixed(2)}, ${state.pointerVelocity.y.toFixed(2)})</div>
-          <div><strong>Tilt Roll:</strong> ${state.tilt.roll.toFixed(2)}</div>
-          <div><strong>Tilt Pitch:</strong> ${state.tilt.pitch.toFixed(2)}</div>
-          <div><strong>Button A:</strong> ${state.buttonA ? '<span style="color:#22c55e">PRESSED</span>' : 'Released'}</div>
-          <div><strong>Button B:</strong> ${state.buttonB ? '<span style="color:#38bdf8">PRESSED</span>' : 'Released'}</div>
-          <div><strong>Last Swing:</strong> ${this.lastSwingInfo}</div>
-        `;
-      }
-      requestAnimationFrame(updateHud);
-    };
-
-    requestAnimationFrame(updateHud);
-  }
-
-  private toggleHud(): void {
-    if (!this.debugHud) return;
-    this.isHudVisible = !this.isHudVisible;
-    this.debugHud.style.display = this.isHudVisible ? 'block' : 'none';
   }
 }
 

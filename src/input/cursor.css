@@ -1,0 +1,78 @@
+/* Wii Hand Cursor Styles */
+
+body.oui-custom-cursor,
+body.oui-custom-cursor * {
+  cursor: none !important;
+}
+
+.oui-hand-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+  z-index: 99999;
+  transform-origin: 10px 10px;
+  transition: transform 0.04s ease-out;
+  will-change: transform;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.28));
+}
+
+.oui-hand-icon {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: transform 0.1s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.oui-hand-cursor.clicking .oui-hand-icon {
+  transform: scale(0.88) translateY(2px);
+}
+
+.oui-hand-cursor.hovering .oui-hand-icon {
+  transform: scale(1.08);
+}
+
+/* "P1" Badge beneath cursor */
+.oui-player-badge {
+  position: absolute;
+  top: 34px;
+  left: 6px;
+  background: #0284c7;
+  color: #ffffff;
+  font-family: 'Comfortaa', sans-serif;
+  font-weight: 800;
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 9999px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.05em;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Click impulse ripple */
+.oui-cursor-ripple {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 20px;
+  height: 20px;
+  margin-top: -10px;
+  margin-left: -10px;
+  border-radius: 50%;
+  border: 2px solid #38bdf8;
+  pointer-events: none;
+  animation: oui-cursor-click-ring 0.35s ease-out forwards;
+}
+
+@keyframes oui-cursor-click-ring {
+  0% {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
