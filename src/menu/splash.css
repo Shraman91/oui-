@@ -1,4 +1,4 @@
-/* Cute Pastel Baby-Pink Boot Splash (Zero Gradients) */
+/* Polished Cute Console Boot Splash */
 
 .oui-splash-container {
   position: fixed;
@@ -8,7 +8,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #fdf2f8; /* Soft baby pink background */
+  background-color: #f8f5f6;
   user-select: none;
   cursor: pointer;
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -22,20 +22,20 @@
 
 .oui-splash-box {
   background-color: #ffffff;
-  border: 3.5px solid #3b1d28;
-  box-shadow: 7px 7px 0px #f472b6;
-  border-radius: 28px;
+  border: 2.5px solid #382c33;
+  box-shadow: 0 12px 30px rgba(51, 37, 43, 0.08), 5px 5px 0px #f4a0c0;
+  border-radius: 24px;
   padding: 3rem 4.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  animation: oui-splash-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: oui-splash-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 @keyframes oui-splash-pop {
   0% {
-    transform: scale(0.8);
+    transform: scale(0.85);
     opacity: 0;
   }
   100% {
@@ -46,9 +46,9 @@
 
 .oui-splash-logo {
   font-family: 'Comfortaa', cursive, sans-serif;
-  font-size: 4.8rem;
+  font-size: 4.6rem;
   font-weight: 700;
-  color: #3b1d28;
+  color: #33252d;
   display: flex;
   align-items: center;
   gap: 0.35rem;
@@ -57,14 +57,14 @@
 
 /* Cute animated baby pink pixel eyes */
 .oui-pixel-eyes-svg {
-  width: 76px;
-  height: 50px;
+  width: 72px;
+  height: 48px;
   shape-rendering: crispEdges;
-  animation: oui-pixel-blink 2.2s infinite steps(1);
+  animation: oui-pixel-blink 2.4s infinite steps(1);
 }
 
 @keyframes oui-pixel-blink {
-  0%, 85%, 100% {
+  0%, 86%, 100% {
     opacity: 1;
   }
   90% {
@@ -74,10 +74,10 @@
 
 .oui-splash-badge {
   background-color: #fce7f3;
-  border: 2px solid #f472b6;
+  border: 1.5px solid #f4a0c0;
   color: #be185d;
   font-family: 'Comfortaa', monospace, sans-serif;
-  font-size: 0.88rem;
+  font-size: 0.86rem;
   font-weight: 700;
   padding: 0.35rem 1rem;
   border-radius: 12px;
@@ -86,7 +86,7 @@
 }
 
 .oui-splash-prompt {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 700;
   color: #db2777;
   margin-top: 1.5rem;
@@ -96,9 +96,9 @@
 
 @keyframes oui-prompt-pulse {
   0% {
-    opacity: 0.45;
+    opacity: 0.4;
   }
   100% {
-    opacity: 1;
+    opacity: 0.95;
   }
 }

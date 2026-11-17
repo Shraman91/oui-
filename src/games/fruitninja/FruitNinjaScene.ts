@@ -19,6 +19,7 @@ interface ActiveFruit {
   radius: number;
   sprite: Phaser.GameObjects.Sprite;
   sliced: boolean;
+  sparkTimer?: number;
 }
 
 interface SplitHalf {
@@ -31,7 +32,7 @@ interface SplitHalf {
   rotationSpeed: number;
 }
 
-interface JuiceParticle {
+interface JuiceDroplet {
   sprite: Phaser.GameObjects.Sprite;
   x: number;
   y: number;
@@ -62,7 +63,7 @@ export class FruitNinjaScene extends Phaser.Scene {
   // Active entities
   private activeFruits: ActiveFruit[] = [];
   private splitHalves: SplitHalf[] = [];
-  private particles: JuiceParticle[] = [];
+  private particles: JuiceDroplet[] = [];
 
   // Blade Trail
   private bladeTrail!: BladeTrail;
@@ -90,37 +91,35 @@ export class FruitNinjaScene extends Phaser.Scene {
   }
 
   public create(): void {
-    // 1. Generate programmatic retro textures
+    // 1. Generate programmatic vector textures
     FruitTextureGenerator.generateAll(this);
 
     // 2. High score from StorageManager
     this.highScore = StorageManager.getHighScore('fruitninja');
 
-    // 3. Background: Cute solid mint/pastel dojo (Zero gradients)
-    const bg = this.add.rectangle(
-      FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH / 2,
-      FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT / 2,
-      FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH,
-      FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT,
-      0xfdf2f8 // Baby pink backdrop
-    );
-    bg.setDepth(-10);
+    // 3. Gentle, eye-friendly Tatami Dojo aesthetic (Zero Gradients, zero harsh saturated neons)
+    const W = FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH;
+    const H = FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT;
 
-    // Inner play mat (Soft pastel mint bamboo floor)
-    const floor = this.add.rectangle(
-      FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH / 2,
-      FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT / 2,
-      FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH - 48,
-      FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT - 48,
-      0xdcfce7 // Mint green play mat
-    );
-    floor.setStrokeStyle(3.5, 0x3b1d28);
-    floor.setDepth(-9);
+    // Outer warm cream frame
+    const outerBg = this.add.rectangle(W / 2, H / 2, W, H, 0xf8f5f6);
+    outerBg.setDepth(-20);
+
+    // Inner soothing sage tatami play mat
+    const dojoMat = this.add.rectangle(W / 2, H / 2, W - 44, H - 44, 0xedf7ed);
+    dojoMat.setStrokeStyle(2.5, 0x3d3037);
+    dojoMat.setDepth(-10);
+
+    // Subtle decorative tatami stitch borders
+    const matBorder = this.add.graphics();
+    matBorder.setDepth(-9);
+    matBorder.lineStyle(1.5, 0xc4e5cb, 0.7);
+    matBorder.strokeRect(32, 32, W - 64, H - 64);
 
     // 4. Initialize Blade Trail
     this.bladeTrail = new BladeTrail(this);
 
-    // 5. Build Retro HUD
+    // 5. Build Polished Modern Retro HUD
     this.createHUD();
 
     // 6. Reset state
@@ -139,46 +138,51 @@ export class FruitNinjaScene extends Phaser.Scene {
   private createHUD(): void {
     const W = FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH;
 
-    // Score HUD Box (Top Left)
-    const scoreBox = this.add.rectangle(130, 52, 180, 52, 0xffffff);
-    scoreBox.setStrokeStyle(3, 0x3b1d28);
-    scoreBox.setDepth(200);
+    // Score Pill (Top Left)
+    const scorePill = this.add.container(130, 48).setDepth(200);
+    const scoreShadow = this.add.rectangle(3, 3, 170, 44, 0xf4a0c0).setOrigin(0.5);
+    const scoreBg = this.add.rectangle(0, 0, 170, 44, 0xffffff).setOrigin(0.5);
+    scoreBg.setStrokeStyle(2, 0x3d3037);
 
-    this.scoreText = this.add.text(130, 52, 'SCORE: 0', {
+    this.scoreText = this.add.text(0, 0, 'SCORE: 0', {
       fontFamily: 'Comfortaa, sans-serif',
-      fontSize: '20px',
-      color: '#3b1d28',
+      fontSize: '18px',
+      color: '#33252d',
       fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(201);
+    }).setOrigin(0.5);
+    scorePill.add([scoreShadow, scoreBg, this.scoreText]);
 
-    // High Score Box (Top Center)
-    const hsBox = this.add.rectangle(W / 2, 52, 220, 44, 0xfce7f3);
-    hsBox.setStrokeStyle(2.5, 0x3b1d28);
-    hsBox.setDepth(200);
+    // High Score Pill (Top Center)
+    const hsPill = this.add.container(W / 2, 48).setDepth(200);
+    const hsShadow = this.add.rectangle(3, 3, 210, 40, 0xe9d5ff).setOrigin(0.5);
+    const hsBg = this.add.rectangle(0, 0, 210, 40, 0xffffff).setOrigin(0.5);
+    hsBg.setStrokeStyle(2, 0x3d3037);
 
-    this.highScoreText = this.add.text(W / 2, 52, `BEST: ${this.highScore}`, {
-      fontFamily: 'monospace',
-      fontSize: '17px',
-      color: '#db2777',
+    this.highScoreText = this.add.text(0, 0, `BEST: ${this.highScore}`, {
+      fontFamily: 'Comfortaa, sans-serif',
+      fontSize: '16px',
+      color: '#7c3aed',
       fontStyle: 'bold'
-    }).setOrigin(0.5).setDepth(201);
+    }).setOrigin(0.5);
+    hsPill.add([hsShadow, hsBg, this.highScoreText]);
 
-    // Misses Box (Top Right)
-    const missBox = this.add.rectangle(W - 130, 52, 180, 52, 0xffffff);
-    missBox.setStrokeStyle(3, 0x3b1d28);
-    missBox.setDepth(200);
+    // Misses Pill (Top Right)
+    const missPill = this.add.container(W - 130, 48).setDepth(200);
+    const missShadow = this.add.rectangle(3, 3, 160, 44, 0xfecdd3).setOrigin(0.5);
+    const missBg = this.add.rectangle(0, 0, 160, 44, 0xffffff).setOrigin(0.5);
+    missBg.setStrokeStyle(2, 0x3d3037);
 
     this.missIcons = [];
-    const startX = W - 180;
+    const iconStartX = -44;
     for (let i = 0; i < FRUIT_NINJA_CONSTANTS.GAMEPLAY.MAX_MISSES; i++) {
-      const icon = this.add.text(startX + i * 50, 52, '♥', {
-        fontFamily: 'monospace',
-        fontSize: '28px',
-        color: '#f472b6',
-        fontStyle: 'bold'
-      }).setOrigin(0.5).setDepth(201);
-      this.missIcons.push(icon);
+      const heart = this.add.text(iconStartX + i * 44, 0, '♥', {
+        fontFamily: 'sans-serif',
+        fontSize: '24px',
+        color: '#f43f5e'
+      }).setOrigin(0.5);
+      this.missIcons.push(heart);
     }
+    missPill.add([missShadow, missBg, ...this.missIcons]);
   }
 
   private resetGame(): void {
@@ -191,7 +195,7 @@ export class FruitNinjaScene extends Phaser.Scene {
     this.comboCount = 0;
     this.comboTimer = 0;
 
-    // Clear active fruits and halves
+    // Clear active entities
     for (const f of this.activeFruits) {
       f.sprite.destroy();
     }
@@ -218,7 +222,7 @@ export class FruitNinjaScene extends Phaser.Scene {
     const dt = Math.max(0.001, Math.min(delta / 1000, 0.1));
     const currentTime = time / 1000;
 
-    // 1. Read Pointer from InputManager
+    // 1. Read Pointer with Viewport Scaling
     const state = this.inputManager.getState();
     let px = state.pointer.x * FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH;
     let py = state.pointer.y * FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT;
@@ -232,20 +236,21 @@ export class FruitNinjaScene extends Phaser.Scene {
       py = ((screenY - rect.top) / rect.height) * FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT;
     }
 
-    // 2. Update Blade Trail
+    // 2. Update Fluid Blade Trail
     this.bladeTrail.addPoint(px, py, currentTime);
     this.bladeTrail.update(currentTime);
 
     const currentPointer = { x: px, y: py };
 
     if (!this.isGameOver) {
-      // 3. Slicing Detection (requires movement threshold so hovering doesn't cut)
+      // 3. Optimized Slicing Detection
       if (this.lastPointer) {
         const moveDist = Math.hypot(
           currentPointer.x - this.lastPointer.x,
           currentPointer.y - this.lastPointer.y
         );
-        if (moveDist >= 4) {
+        // Requires real swipe motion to cut
+        if (moveDist >= 3.5) {
           this.detectSlices(this.lastPointer, currentPointer, currentTime);
         }
       }
@@ -263,10 +268,10 @@ export class FruitNinjaScene extends Phaser.Scene {
       if (this.spawnTimer >= this.currentSpawnInterval) {
         this.spawnTimer = 0;
         this.spawnWave();
-        // Dynamically accelerate spawns
+        // Dynamically ramp up difficulty
         this.currentSpawnInterval = Math.max(
           FRUIT_NINJA_CONSTANTS.GAMEPLAY.SPAWN_INTERVAL_MIN,
-          this.currentSpawnInterval - 0.03
+          this.currentSpawnInterval - 0.035
         );
       }
 
@@ -303,22 +308,31 @@ export class FruitNinjaScene extends Phaser.Scene {
     fruit.sprite.setVisible(false);
 
     if (fruit.type === 'bomb') {
-      // Bomb sliced: immediate game over!
+      // Bomb sliced: immediate camera shake & game over!
       this.triggerBombExplosion(fruit.x, fruit.y);
       this.triggerGameOver('BOMB DETONATED!');
       return;
     }
 
-    // Fruit sliced: Split into halves
+    // Fruit sliced: Trigger visual effects
     if (fruit.config) {
-      this.createSplitHalves(fruit, sliceAngle);
-      this.createJuiceSplatter(impactPoint.x, impactPoint.y, fruit.config);
+      // 1. Razor sharp slash flash line
+      this.createSlashFlash(impactPoint.x, impactPoint.y, sliceAngle);
 
-      // Increment combo count
+      // 2. Juicy tatami splat decal on background
+      this.createDojoSplatDecal(impactPoint.x, impactPoint.y, fruit.config);
+
+      // 3. Split halves with outward impulse
+      this.createSplitHalves(fruit, sliceAngle);
+
+      // 4. Spray droplet particles
+      this.createJuiceSplatter(impactPoint.x, impactPoint.y, fruit.config, sliceAngle);
+
+      // 5. Increment combo count
       this.comboCount++;
       this.comboTimer = FRUIT_NINJA_CONSTANTS.GAMEPLAY.COMBO_WINDOW_SECONDS;
 
-      // Base score
+      // 6. Base score & popup
       const pts = fruit.config.points;
       this.score += pts;
       this.showScorePopup(fruit.x, fruit.y, `+${pts}`, fruit.config.juiceColor);
@@ -327,12 +341,59 @@ export class FruitNinjaScene extends Phaser.Scene {
     }
   }
 
+  private createSlashFlash(x: number, y: number, angle: number): void {
+    const flash = this.add.sprite(x, y, 'slash_flash');
+    flash.setRotation(angle);
+    flash.setDepth(120);
+    flash.setScale(0.8, 1.2);
+
+    this.tweens.add({
+      targets: flash,
+      scaleX: 1.6,
+      scaleY: 0.2,
+      alpha: 0,
+      duration: 120,
+      ease: 'Quad.easeOut',
+      onComplete: () => flash.destroy()
+    });
+  }
+
+  private createDojoSplatDecal(x: number, y: number, fruit: FruitConfig): void {
+    const decalIndex = Math.floor(Math.random() * 3);
+    const decal = this.add.sprite(x, y, `splat_decal_${decalIndex}`);
+    const tintColor = parseInt(fruit.juiceColor.replace('#', ''), 16);
+
+    decal.setTint(tintColor);
+    decal.setDepth(-5); // Above mat, below fruits and blade
+    decal.setRotation(Math.random() * Math.PI * 2);
+    decal.setScale(0.3);
+    decal.setAlpha(0.65);
+
+    // Pop scale in
+    this.tweens.add({
+      targets: decal,
+      scale: 0.8 + Math.random() * 0.3,
+      duration: 80,
+      ease: 'Back.easeOut'
+    });
+
+    // Slow fade out over 3.5 seconds
+    this.tweens.add({
+      targets: decal,
+      alpha: 0,
+      delay: 2400,
+      duration: 1200,
+      ease: 'Quad.easeIn',
+      onComplete: () => decal.destroy()
+    });
+  }
+
   private createSplitHalves(fruit: ActiveFruit, sliceAngle: number): void {
     if (!fruit.config) return;
 
-    // Outward impulse perpendicular to slice cut
+    // Outward impulse perpendicular to cut
     const outwardAngle = sliceAngle + Math.PI / 2;
-    const outwardSpeed = FRUIT_NINJA_CONSTANTS.PHYSICS.SPLIT_OUTWARD_SPEED;
+    const outwardSpeed = FRUIT_NINJA_CONSTANTS.PHYSICS.SPLIT_OUTWARD_SPEED + Math.random() * 40;
 
     const ox = Math.cos(outwardAngle) * outwardSpeed;
     const oy = Math.sin(outwardAngle) * outwardSpeed;
@@ -348,7 +409,7 @@ export class FruitNinjaScene extends Phaser.Scene {
       vx: fruit.vx - ox,
       vy: fruit.vy - oy,
       rotation: sliceAngle,
-      rotationSpeed: -3.0
+      rotationSpeed: -3.2
     });
 
     // Right Half
@@ -362,21 +423,23 @@ export class FruitNinjaScene extends Phaser.Scene {
       vx: fruit.vx + ox,
       vy: fruit.vy + oy,
       rotation: sliceAngle,
-      rotationSpeed: 3.0
+      rotationSpeed: 3.2
     });
   }
 
-  private createJuiceSplatter(x: number, y: number, fruit: FruitConfig): void {
-    const count = 14;
+  private createJuiceSplatter(x: number, y: number, fruit: FruitConfig, sliceAngle: number): void {
+    const count = 16;
     const juiceTint = parseInt(fruit.juiceColor.replace('#', ''), 16);
 
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 120 + Math.random() * 260;
+      // Direct droplets along the slice cut and perpendicular splash
+      const baseAngle = i % 2 === 0 ? sliceAngle + (Math.PI / 2) : sliceAngle - (Math.PI / 2);
+      const angle = baseAngle + (Math.random() - 0.5) * 0.8;
+      const speed = 140 + Math.random() * 320;
 
-      const pSprite = this.add.sprite(x, y, `particle_${Math.floor(Math.random() * 5)}`);
+      const dropletType = Math.floor(Math.random() * 3);
+      const pSprite = this.add.sprite(x, y, `droplet_${dropletType}`);
       pSprite.setTint(juiceTint);
-      pSprite.setScale(0.8 + Math.random() * 0.6);
       pSprite.setDepth(25);
 
       this.particles.push({
@@ -387,25 +450,22 @@ export class FruitNinjaScene extends Phaser.Scene {
         vy: Math.sin(angle) * speed,
         alpha: 1,
         lifetime: 0,
-        maxLifetime: 0.35 + Math.random() * 0.25
+        maxLifetime: 0.4 + Math.random() * 0.3
       });
     }
   }
 
   private triggerBombExplosion(x: number, y: number): void {
-    // Camera shake
-    this.cameras.main.shake(300, 0.02);
+    this.cameras.main.shake(350, 0.025);
+    this.cameras.main.flash(200, 255, 240, 245);
 
-    // Explosion flash
-    this.cameras.main.flash(250, 255, 255, 255);
-
-    // Dark explosion sparks
-    for (let i = 0; i < 30; i++) {
+    // Dark smoke sparks
+    for (let i = 0; i < 35; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 180 + Math.random() * 400;
+      const speed = 180 + Math.random() * 420;
 
-      const pSprite = this.add.sprite(x, y, 'particle_0');
-      pSprite.setScale(1.2);
+      const pSprite = this.add.sprite(x, y, 'droplet_1');
+      pSprite.setTint(0x262024);
       pSprite.setDepth(50);
 
       this.particles.push({
@@ -416,7 +476,7 @@ export class FruitNinjaScene extends Phaser.Scene {
         vy: Math.sin(angle) * speed,
         alpha: 1,
         lifetime: 0,
-        maxLifetime: 0.5
+        maxLifetime: 0.55
       });
     }
   }
@@ -425,25 +485,60 @@ export class FruitNinjaScene extends Phaser.Scene {
     if (this.comboCount >= 2) {
       const bonus = this.comboCount;
       this.score += bonus;
-      this.showScorePopup(
-        FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH / 2,
-        FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT / 2 - 80,
-        `COMBO x${this.comboCount}! +${bonus}`,
-        '#ec4899',
-        30
-      );
+
+      const W = FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH;
+      const H = FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT;
+
+      // Stylized Combo Banner Popup
+      this.showComboBanner(W / 2, H / 2 - 80, this.comboCount, bonus);
       this.updateHUD();
     }
     this.comboCount = 0;
   }
 
+  private showComboBanner(x: number, y: number, count: number, bonus: number): void {
+    const banner = this.add.container(x, y).setDepth(250);
+
+    const shadow = this.add.rectangle(4, 4, 300, 56, 0xf4a0c0).setOrigin(0.5);
+    const bg = this.add.rectangle(0, 0, 300, 56, 0xffffff).setOrigin(0.5);
+    bg.setStrokeStyle(2.5, 0x3d3037);
+
+    const text = this.add.text(0, 0, `COMBO x${count}! +${bonus}`, {
+      fontFamily: 'Comfortaa, sans-serif',
+      fontSize: '22px',
+      color: '#db2777',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+
+    banner.add([shadow, bg, text]);
+    banner.setScale(0.4);
+
+    this.tweens.add({
+      targets: banner,
+      scale: 1.15,
+      duration: 150,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets: banner,
+          scale: 1.0,
+          y: y - 40,
+          alpha: 0,
+          delay: 450,
+          duration: 350,
+          ease: 'Quad.easeIn',
+          onComplete: () => banner.destroy()
+        });
+      }
+    });
+  }
+
   private spawnWave(): void {
-    const waveSize = 1 + Math.floor(Math.random() * 3); // 1 to 3 items
+    const waveSize = 1 + Math.floor(Math.random() * 3);
     const spawnBomb = Math.random() < FRUIT_NINJA_CONSTANTS.GAMEPLAY.BOMB_SPAWN_CHANCE;
 
     for (let i = 0; i < waveSize; i++) {
-      // Delay wave items slightly
-      this.time.delayedCall(i * 120, () => {
+      this.time.delayedCall(i * 140, () => {
         if (this.isGameOver || this.isGamePaused) return;
 
         if (i === 0 && spawnBomb) {
@@ -470,7 +565,6 @@ export class FruitNinjaScene extends Phaser.Scene {
       FRUIT_NINJA_CONSTANTS.PHYSICS.MAX_LAUNCH_VY
     );
 
-    // Inward horizontal velocity towards center
     const targetCenterX = W / 2;
     const directionToCenter = x < targetCenterX ? 1 : -1;
     const vx = directionToCenter * (60 + Math.random() * 140);
@@ -496,7 +590,8 @@ export class FruitNinjaScene extends Phaser.Scene {
       rotationSpeed: rotSpeed,
       radius: type === 'bomb' ? FRUIT_NINJA_CONSTANTS.BOMB.radius : config!.radius,
       sprite,
-      sliced: false
+      sliced: false,
+      sparkTimer: 0
     });
   }
 
@@ -515,10 +610,18 @@ export class FruitNinjaScene extends Phaser.Scene {
       f.sprite.setPosition(f.x, f.y);
       f.sprite.setRotation(f.rotation);
 
+      // Bomb fuse spark animation while flying
+      if (f.type === 'bomb' && !f.sliced) {
+        f.sparkTimer = (f.sparkTimer || 0) + dt;
+        if (f.sparkTimer > 0.08) {
+          f.sparkTimer = 0;
+          this.emitFuseSpark(f.x, f.y);
+        }
+      }
+
       // Dropped past bottom
       if (f.y > H + 50 && f.vy > 0) {
         if (!f.sliced && f.type === 'fruit') {
-          // Player missed a fruit!
           this.handleMiss(f.x);
         }
 
@@ -528,15 +631,32 @@ export class FruitNinjaScene extends Phaser.Scene {
     }
   }
 
+  private emitFuseSpark(x: number, y: number): void {
+    const spark = this.add.sprite(x + 2, y - 28, 'droplet_0');
+    spark.setTint(Math.random() > 0.5 ? 0xf59e0b : 0xfde047);
+    spark.setScale(0.8);
+    spark.setDepth(12);
+
+    this.tweens.add({
+      targets: spark,
+      x: spark.x + (Math.random() - 0.5) * 16,
+      y: spark.y - 12 - Math.random() * 10,
+      alpha: 0,
+      scale: 0.2,
+      duration: 160,
+      onComplete: () => spark.destroy()
+    });
+  }
+
   private handleMiss(x: number): void {
     this.misses++;
     this.updateHUD();
 
     // Show visual red X on bottom where fruit dropped
     const cross = this.add.text(x, FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT - 40, '✕', {
-      fontFamily: 'monospace',
-      fontSize: '36px',
-      color: '#dc2626',
+      fontFamily: 'Comfortaa, monospace',
+      fontSize: '32px',
+      color: '#e11d48',
       fontStyle: 'bold'
     }).setOrigin(0.5).setDepth(150);
 
@@ -544,7 +664,9 @@ export class FruitNinjaScene extends Phaser.Scene {
       targets: cross,
       alpha: 0,
       y: cross.y - 30,
+      scale: 1.3,
       duration: 600,
+      ease: 'Quad.easeOut',
       onComplete: () => cross.destroy()
     });
 
@@ -580,7 +702,7 @@ export class FruitNinjaScene extends Phaser.Scene {
       const p = this.particles[i];
       p.lifetime += dt;
 
-      p.vy += 450 * dt; // light gravity on juice
+      p.vy += 500 * dt; // Gravity on juice droplets
       p.x += p.vx * dt;
       p.y += p.vy * dt;
 
@@ -596,20 +718,20 @@ export class FruitNinjaScene extends Phaser.Scene {
     }
   }
 
-  private showScorePopup(x: number, y: number, text: string, color: string, size = 22): void {
+  private showScorePopup(x: number, y: number, text: string, color: string): void {
     const popup = this.add.text(x, y, text, {
       fontFamily: 'Comfortaa, sans-serif',
-      fontSize: `${size}px`,
+      fontSize: '22px',
       color,
       fontStyle: 'bold',
-      stroke: '#3b1d28',
-      strokeThickness: 3
+      stroke: '#3d3037',
+      strokeThickness: 2.5
     }).setOrigin(0.5).setDepth(150);
 
     this.tweens.add({
       targets: popup,
-      y: y - 50,
-      scale: 1.25,
+      y: y - 48,
+      scale: 1.3,
       alpha: 0,
       duration: 650,
       ease: 'Cubic.easeOut',
@@ -630,10 +752,10 @@ export class FruitNinjaScene extends Phaser.Scene {
     for (let i = 0; i < this.missIcons.length; i++) {
       if (i < this.misses) {
         this.missIcons[i].setText('✕');
-        this.missIcons[i].setColor('#dc2626');
+        this.missIcons[i].setColor('#94a3b8');
       } else {
         this.missIcons[i].setText('♥');
-        this.missIcons[i].setColor('#f472b6');
+        this.missIcons[i].setColor('#f43f5e');
       }
     }
   }
@@ -641,7 +763,6 @@ export class FruitNinjaScene extends Phaser.Scene {
   private triggerGameOver(reason: string): void {
     this.isGameOver = true;
 
-    // Check high score
     if (this.score > this.highScore) {
       this.highScore = this.score;
       StorageManager.saveHighScore('fruitninja', this.highScore);
@@ -650,53 +771,73 @@ export class FruitNinjaScene extends Phaser.Scene {
     const W = FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH;
     const H = FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT;
 
-    // Game Over Retro Card (Baby-pink flat aesthetic)
+    // Polished Game Over Modal Card
     this.gameOverContainer = this.add.container(W / 2, H / 2).setDepth(300);
 
-    const card = this.add.rectangle(0, 0, 440, 320, 0xffffff);
-    card.setStrokeStyle(3.5, 0x3b1d28);
-
-    const cardShadow = this.add.rectangle(8, 8, 440, 320, 0xf472b6);
+    const cardShadow = this.add.rectangle(6, 6, 420, 300, 0xf4a0c0);
     cardShadow.setDepth(-1);
 
-    const title = this.add.text(0, -95, reason, {
+    const card = this.add.rectangle(0, 0, 420, 300, 0xffffff);
+    card.setStrokeStyle(2.5, 0x3d3037);
+
+    const title = this.add.text(0, -90, reason, {
       fontFamily: 'Comfortaa, sans-serif',
-      fontSize: '24px',
-      color: '#db2777',
+      fontSize: '22px',
+      color: '#e11d48',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    const finalScore = this.add.text(0, -35, `FINAL SCORE: ${this.score}`, {
+    const finalScore = this.add.text(0, -30, `FINAL SCORE: ${this.score}`, {
       fontFamily: 'Comfortaa, sans-serif',
-      fontSize: '28px',
-      color: '#3b1d28',
+      fontSize: '26px',
+      color: '#33252d',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    const bestScore = this.add.text(0, 15, `ALL TIME BEST: ${this.highScore}`, {
-      fontFamily: 'monospace',
-      fontSize: '18px',
-      color: '#0284c7',
+    const bestScore = this.add.text(0, 18, `ALL TIME BEST: ${this.highScore}`, {
+      fontFamily: 'Comfortaa, sans-serif',
+      fontSize: '16px',
+      color: '#7c3aed',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    // Play Again Button
-    const restartBtnBg = this.add.rectangle(0, 80, 220, 48, 0xec4899);
-    restartBtnBg.setStrokeStyle(2.5, 0x3b1d28);
-    restartBtnBg.setInteractive({ useHandCursor: true });
+    // Play Again Tactile Button
+    const restartBtnContainer = this.add.container(0, 80);
+    const btnShadow = this.add.rectangle(3, 3, 200, 46, 0xec4899);
+    const btnBg = this.add.rectangle(0, 0, 200, 46, 0xf472b6);
+    btnBg.setStrokeStyle(2, 0x3d3037);
+    btnBg.setInteractive({ useHandCursor: true });
 
-    const restartBtnText = this.add.text(0, 80, 'PLAY AGAIN', {
+    const btnText = this.add.text(0, 0, 'PLAY AGAIN', {
       fontFamily: 'Comfortaa, sans-serif',
-      fontSize: '18px',
+      fontSize: '16px',
       color: '#ffffff',
       fontStyle: 'bold'
     }).setOrigin(0.5);
 
-    restartBtnBg.on('pointerdown', () => {
+    btnBg.on('pointerdown', () => {
       this.resetGame();
     });
 
-    this.gameOverContainer.add([cardShadow, card, title, finalScore, bestScore, restartBtnBg, restartBtnText]);
+    btnBg.on('pointerover', () => {
+      btnBg.setFillStyle(0xec4899);
+    });
+
+    btnBg.on('pointerout', () => {
+      btnBg.setFillStyle(0xf472b6);
+    });
+
+    restartBtnContainer.add([btnShadow, btnBg, btnText]);
+
+    this.gameOverContainer.add([cardShadow, card, title, finalScore, bestScore, restartBtnContainer]);
+    this.gameOverContainer.setScale(0.7);
+
+    this.tweens.add({
+      targets: this.gameOverContainer,
+      scale: 1,
+      duration: 250,
+      ease: 'Back.easeOut'
+    });
   }
 
   public pauseGame(): void {

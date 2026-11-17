@@ -1,4 +1,4 @@
-/* Cute Pastel Baby-Pink Sketchboard Styles (Zero Gradients, Zero Emojis) */
+/* Polished Cute Sketchboard Styles */
 
 .oui-sketch-wrapper {
   width: 100%;
@@ -8,8 +8,8 @@
   align-items: center;
   justify-content: space-between;
   box-sizing: border-box;
-  padding: 1.25rem 2rem;
-  background-color: #fdf2f8;
+  padding: 1.15rem 2rem;
+  background-color: #f8f5f6;
   position: relative;
   overflow: hidden;
   user-select: none;
@@ -33,20 +33,20 @@
 
 .oui-sketch-title {
   font-family: 'Comfortaa', cursive, sans-serif;
-  font-size: 1.6rem;
+  font-size: 1.55rem;
   font-weight: 700;
-  color: #3b1d28;
+  color: #33252d;
   margin: 0;
 }
 
 .oui-sketch-badge {
   background-color: #fce7f3;
-  border: 2px solid #3b1d28;
-  box-shadow: 2.5px 2.5px 0px #f472b6;
-  color: #9d174d;
-  font-family: monospace;
-  font-size: 0.75rem;
-  font-weight: 800;
+  border: 1.5px solid #382c33;
+  box-shadow: 2px 2px 0px #f4a0c0;
+  color: #db2777;
+  font-family: 'Comfortaa', monospace, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
   padding: 0.2rem 0.65rem;
   border-radius: 8px;
   letter-spacing: 0.05em;
@@ -54,13 +54,13 @@
 }
 
 .oui-sketch-hint {
-  font-family: monospace;
+  font-family: 'Comfortaa', monospace, sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
-  color: #be185d;
+  color: #db2777;
   background-color: #ffffff;
-  border: 2px solid #3b1d28;
-  box-shadow: 2.5px 2.5px 0px #f472b6;
+  border: 2px solid #382c33;
+  box-shadow: 2px 2px 0px #f4a0c0;
   padding: 0.35rem 0.85rem;
   border-radius: 10px;
 }
@@ -73,15 +73,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0.75rem 0;
+  margin: 0.65rem 0;
   position: relative;
 }
 
 .oui-sketch-canvas-frame {
   background-color: #ffffff;
-  border: 3.5px solid #3b1d28;
-  box-shadow: 8px 8px 0px #f472b6;
-  border-radius: 24px;
+  border: 2.5px solid #382c33;
+  box-shadow: 0 12px 28px rgba(51, 37, 43, 0.08), 5px 5px 0px #f4a0c0;
+  border-radius: 20px;
   overflow: hidden;
   display: flex;
   position: relative;
@@ -100,9 +100,9 @@
   width: 100%;
   max-width: 1200px;
   background-color: #ffffff;
-  border: 3.5px solid #3b1d28;
-  box-shadow: 6px 6px 0px #f472b6;
-  border-radius: 20px;
+  border: 2px solid #382c33;
+  box-shadow: 0 8px 20px rgba(51, 37, 43, 0.06), 4px 4px 0px #f4a0c0;
+  border-radius: 18px;
   padding: 0.6rem 1.25rem;
   display: flex;
   align-items: center;
@@ -119,19 +119,19 @@
 }
 
 .oui-sketch-divider {
-  width: 2.5px;
-  height: 28px;
+  width: 2px;
+  height: 26px;
   background-color: #fce7f3;
   border-radius: 2px;
 }
 
 /* Color Swatches */
 .oui-sketch-color-swatch {
-  width: 26px;
-  height: 26px;
+  width: 25px;
+  height: 25px;
   border-radius: 50%;
-  border: 2px solid #3b1d28;
-  box-shadow: 2px 2px 0px #3b1d28;
+  border: 2px solid #382c33;
+  box-shadow: 1.5px 1.5px 0px rgba(56, 44, 51, 0.4);
   cursor: pointer;
   transition: transform 0.12s ease, box-shadow 0.12s ease;
   position: relative;
@@ -139,23 +139,23 @@
 }
 
 .oui-sketch-color-swatch:hover {
-  transform: translate(-2px, -2px) scale(1.1);
-  box-shadow: 4px 4px 0px #3b1d28;
+  transform: translate(-1.5px, -1.5px) scale(1.1);
+  box-shadow: 3px 3px 0px rgba(56, 44, 51, 0.5);
 }
 
 .oui-sketch-color-swatch.active {
   transform: scale(1.18);
-  box-shadow: 0 0 0 2.5px #ffffff, 0 0 0 5px #3b1d28;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4.5px #382c33;
 }
 
 /* Brush Size Buttons */
 .oui-sketch-size-btn {
   background-color: #fce7f3;
-  border: 2px solid #3b1d28;
-  box-shadow: 2.5px 2.5px 0px #f472b6;
+  border: 1.5px solid #382c33;
+  box-shadow: 2px 2px 0px #f4a0c0;
   border-radius: 10px;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,18 +166,18 @@
 
 .oui-sketch-size-btn:hover {
   transform: translate(-1.5px, -1.5px);
-  box-shadow: 4px 4px 0px #f472b6;
+  box-shadow: 3px 3px 0px #f4a0c0;
   background-color: #fbcfe8;
 }
 
 .oui-sketch-size-btn.active {
   background-color: #ec4899;
-  border-color: #3b1d28;
-  box-shadow: 2px 2px 0px #3b1d28;
+  border-color: #382c33;
+  box-shadow: 2px 2px 0px #382c33;
 }
 
 .oui-sketch-size-dot {
-  background-color: #3b1d28;
+  background-color: #382c33;
   border-radius: 50%;
   display: block;
 }
@@ -189,14 +189,14 @@
 /* Action Buttons (Eraser, Undo, Clear, Save) */
 .oui-sketch-action-btn {
   background-color: #ffffff;
-  border: 2px solid #3b1d28;
-  box-shadow: 3px 3px 0px #f472b6;
+  border: 1.5px solid #382c33;
+  box-shadow: 2.5px 2.5px 0px #f4a0c0;
   border-radius: 12px;
   padding: 0.4rem 0.85rem;
   font-family: 'Comfortaa', sans-serif;
   font-weight: 700;
-  font-size: 0.85rem;
-  color: #3b1d28;
+  font-size: 0.84rem;
+  color: #33252d;
   display: flex;
   align-items: center;
   gap: 0.45rem;
@@ -206,66 +206,51 @@
 }
 
 .oui-sketch-action-btn:hover {
-  transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #f472b6;
-  background-color: #fdf2f8;
-  border-color: #ec4899;
+  transform: translate(-1.5px, -1.5px);
+  box-shadow: 4px 4px 0px #f4a0c0;
+  background-color: #fce7f3;
 }
 
 .oui-sketch-action-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 1.5px 1.5px 0px #f472b6;
+  box-shadow: 1px 1px 0px #f4a0c0;
 }
 
 .oui-sketch-action-btn.active-tool {
-  background-color: #f472b6;
-  color: #ffffff;
-  border-color: #3b1d28;
-  box-shadow: 3px 3px 0px #3b1d28;
+  background-color: #fbcfe8;
+  border-color: #db2777;
+  color: #9d174d;
 }
 
-.oui-sketch-save-btn {
-  background-color: #ec4899;
-  color: #ffffff;
-  border: 2px solid #3b1d28;
-  box-shadow: 3.5px 3.5px 0px #3b1d28;
-}
-
-.oui-sketch-save-btn:hover {
-  background-color: #db2777;
-  border-color: #3b1d28;
-  box-shadow: 5.5px 5.5px 0px #3b1d28;
-}
-
-/* Save feedback toast */
-.oui-sketch-toast {
-  position: absolute;
-  top: 1.25rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #ffffff;
-  border: 3px solid #3b1d28;
-  box-shadow: 5px 5px 0px #f472b6;
-  color: #3b1d28;
-  font-family: 'Comfortaa', sans-serif;
-  font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.6rem 1.4rem;
-  border-radius: 14px;
-  z-index: 1000;
+.oui-sketch-btn-icon {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  animation: oui-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-@keyframes oui-toast-in {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, -15px);
-  }
-  100% {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
+/* Save Success Toast */
+.oui-sketch-toast {
+  position: absolute;
+  bottom: 5.5rem;
+  background-color: #ffffff;
+  border: 2px solid #382c33;
+  box-shadow: 0 8px 24px rgba(51, 37, 43, 0.1), 4px 4px 0px #4ade80;
+  padding: 0.65rem 1.4rem;
+  border-radius: 14px;
+  font-family: 'Comfortaa', sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #15803d;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  z-index: 50;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+.oui-sketch-toast.show {
+  opacity: 1;
+  transform: translateY(0);
 }

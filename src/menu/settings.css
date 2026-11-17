@@ -1,16 +1,18 @@
-/* Cute Retro Settings / Options Modal with Baby-Pink & Pastel Accents */
+/* Polished Retro Settings / Options Modal */
 
 .oui-settings-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(59, 29, 40, 0.6);
+  background-color: rgba(45, 34, 40, 0.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   z-index: 9000;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.22s ease;
 }
 
 .oui-settings-backdrop.open {
@@ -21,15 +23,15 @@
 .oui-settings-modal {
   background-color: #ffffff;
   width: 90%;
-  max-width: 600px;
-  border-radius: 24px;
-  border: 3.5px solid #3b1d28;
-  box-shadow: 8px 8px 0px #f472b6;
+  max-width: 580px;
+  border-radius: 20px;
+  border: 2.5px solid #382c33;
+  box-shadow: 0 16px 36px rgba(51, 37, 43, 0.12), 6px 6px 0px #f4a0c0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transform: scale(0.95);
-  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .oui-settings-backdrop.open .oui-settings-modal {
@@ -38,19 +40,19 @@
 
 /* Header */
 .oui-settings-header {
-  background-color: #fdf2f8;
-  padding: 1.15rem 1.75rem;
+  background-color: #f8f5f6;
+  padding: 1.15rem 1.65rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 3.5px solid #3b1d28;
+  border-bottom: 2px solid #382c33;
 }
 
 .oui-settings-title {
   font-family: 'Comfortaa', cursive, sans-serif;
-  font-size: 1.35rem;
+  font-size: 1.3rem;
   font-weight: 700;
-  color: #3b1d28;
+  color: #33252d;
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -58,30 +60,29 @@
 
 .oui-settings-close-btn {
   background-color: #fce7f3;
-  border: 2px solid #3b1d28;
-  box-shadow: 2px 2px 0px #3b1d28;
-  width: 34px;
-  height: 34px;
+  border: 2px solid #382c33;
+  box-shadow: 2px 2px 0px #f4a0c0;
+  width: 32px;
+  height: 32px;
   border-radius: 8px;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 700;
-  color: #3b1d28;
+  color: #33252d;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.1s ease;
+  transition: transform 0.1s ease, background-color 0.1s ease;
 }
 
 .oui-settings-close-btn:hover {
   transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px #3b1d28;
   background-color: #fbcfe8;
 }
 
 /* Body */
 .oui-settings-body {
-  padding: 1.5rem 1.75rem;
+  padding: 1.4rem 1.65rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -91,13 +92,13 @@
 }
 
 .oui-settings-section-title {
-  font-family: monospace;
-  font-size: 0.88rem;
-  font-weight: 800;
+  font-family: 'Comfortaa', monospace, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 700;
   color: #db2777;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 
 /* Providers List */
@@ -108,28 +109,28 @@
 }
 
 .oui-provider-item {
-  background-color: #fdf2f8;
-  border: 2px solid #3b1d28;
-  box-shadow: 3px 3px 0px #f472b6;
+  background-color: #faf6f8;
+  border: 2px solid #382c33;
+  box-shadow: 3px 3px 0px #f4a0c0;
   border-radius: 14px;
   padding: 0.75rem 1.15rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
 
 .oui-provider-item:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #ec4899;
+  box-shadow: 5px 5px 0px #f4a0c0;
   border-color: #db2777;
 }
 
 .oui-provider-item.active {
   border-color: #db2777;
   background-color: #fce7f3;
-  box-shadow: 4px 4px 0px #ec4899;
+  box-shadow: 4px 4px 0px #f4a0c0;
 }
 
 .oui-provider-info {
@@ -140,37 +141,37 @@
 .oui-provider-item-name {
   font-weight: 700;
   font-size: 0.95rem;
-  color: #3b1d28;
+  color: #33252d;
 }
 
 .oui-provider-item-desc {
   font-size: 0.78rem;
-  color: #831843;
+  color: #785666;
   font-weight: 600;
 }
 
 .oui-provider-active-badge {
-  background-color: #ec4899;
+  background-color: #db2777;
   color: #ffffff;
-  font-family: monospace;
+  font-family: 'Comfortaa', monospace, sans-serif;
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 700;
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
-  border: 1px solid #3b1d28;
-  letter-spacing: 0.05em;
+  border: 1px solid #382c33;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-/* Telemetry Grid (Cute retro terminal) */
+/* Telemetry Grid */
 .oui-telemetry-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 0.75rem;
-  background-color: #3b1d28;
-  border: 2px solid #230f17;
-  border-radius: 16px;
-  padding: 1.15rem;
+  background-color: #2c2227;
+  border: 2px solid #1a1417;
+  border-radius: 14px;
+  padding: 1.1rem;
   color: #fce7f3;
   font-family: monospace;
   font-size: 0.82rem;
@@ -183,7 +184,7 @@
 }
 
 .oui-telemetry-label {
-  color: #f472b6;
+  color: #f4a0c0;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -206,12 +207,12 @@
   flex: 1;
   padding: 0.45rem;
   border-radius: 8px;
-  background-color: #502736;
-  border: 2px solid #230f17;
+  background-color: #40323a;
+  border: 1.5px solid #1a1417;
   text-align: center;
-  font-weight: 800;
-  color: #fbcfe8;
-  font-family: monospace;
+  font-weight: 700;
+  color: #fce7f3;
+  font-family: 'Comfortaa', monospace, sans-serif;
   transition: all 0.1s ease;
 }
 
@@ -229,34 +230,34 @@
 
 /* Footer */
 .oui-settings-footer {
-  padding: 1rem 1.75rem;
-  background-color: #fdf2f8;
-  border-top: 3.5px solid #3b1d28;
+  padding: 0.9rem 1.65rem;
+  background-color: #f8f5f6;
+  border-top: 2px solid #382c33;
   display: flex;
   justify-content: flex-end;
 }
 
 .oui-settings-done-btn {
-  background-color: #ec4899;
+  background-color: #db2777;
   color: #ffffff;
-  border: 2.5px solid #3b1d28;
-  box-shadow: 4px 4px 0px #3b1d28;
+  border: 2px solid #382c33;
+  box-shadow: 3px 3px 0px #f4a0c0;
   font-family: 'Comfortaa', sans-serif;
   font-weight: 700;
-  font-size: 0.95rem;
-  padding: 0.55rem 1.85rem;
-  border-radius: 14px;
+  font-size: 0.92rem;
+  padding: 0.5rem 1.75rem;
+  border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .oui-settings-done-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0px #3b1d28;
-  background-color: #db2777;
+  box-shadow: 5px 5px 0px #f4a0c0;
+  background-color: #be185d;
 }
 
 .oui-settings-done-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 2px 2px 0px #3b1d28;
+  box-shadow: 1px 1px 0px #f4a0c0;
 }

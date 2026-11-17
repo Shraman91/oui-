@@ -41,14 +41,15 @@ body.oui-custom-cursor * {
   position: absolute;
   top: 26px;
   left: 12px;
-  background-color: #f472b6;
+  background-color: #ec4899;
   color: #ffffff;
-  font-family: monospace;
-  font-weight: 800;
+  font-family: 'Comfortaa', monospace;
+  font-weight: 700;
   font-size: 8px;
   padding: 1px 5px;
   border-radius: 4px;
-  border: 1px solid #3b1d28;
+  border: 1px solid #382c33;
+  box-shadow: 1px 1px 0px #382c33;
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
@@ -59,7 +60,7 @@ body.oui-custom-cursor * {
   width: 5px;
   height: 5px;
   background-color: #f472b6;
-  border: 1px solid #3b1d28;
+  border: 1px solid #382c33;
   pointer-events: none;
   animation: oui-spark-pop 0.25s steps(3) forwards;
 }

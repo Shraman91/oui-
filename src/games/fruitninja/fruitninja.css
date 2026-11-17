@@ -5,7 +5,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #fdf2f8;
+  background-color: #f8f5f6;
   overflow: hidden;
   user-select: none;
 }
@@ -23,8 +23,7 @@
   display: block;
   image-rendering: -webkit-optimize-contrast;
   image-rendering: crisp-edges;
-  image-rendering: pixelated;
-  border: 3.5px solid #3b1d28;
-  box-shadow: 6px 6px 0px #f472b6;
-  border-radius: 12px;
+  border: 2.5px solid #382c33;
+  box-shadow: 0 10px 25px rgba(56, 44, 51, 0.08), 5px 5px 0px #f4a0c0;
+  border-radius: 16px;
 }
