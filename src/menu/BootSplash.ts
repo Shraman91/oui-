@@ -35,19 +35,19 @@ export class BootSplash {
         <div class="oui-splash-logo">
           <span>oui</span>
           <svg viewBox="0 0 24 16" class="oui-pixel-eyes-svg" shape-rendering="crispEdges">
-            <!-- Left pixel eye ^ -->
-            <rect x="2" y="7" width="2" height="3" fill="#0284c7"/>
-            <rect x="4" y="4" width="2" height="3" fill="#0284c7"/>
-            <rect x="6" y="2" width="2" height="2" fill="#0284c7"/>
-            <rect x="8" y="4" width="2" height="3" fill="#0284c7"/>
-            <rect x="10" y="7" width="2" height="3" fill="#0284c7"/>
+            <!-- Left pixel eye ^ (baby pink) -->
+            <rect x="2" y="7" width="2" height="3" fill="#ec4899"/>
+            <rect x="4" y="4" width="2" height="3" fill="#ec4899"/>
+            <rect x="6" y="2" width="2" height="2" fill="#ec4899"/>
+            <rect x="8" y="4" width="2" height="3" fill="#ec4899"/>
+            <rect x="10" y="7" width="2" height="3" fill="#ec4899"/>
 
-            <!-- Right pixel eye ^ -->
-            <rect x="13" y="7" width="2" height="3" fill="#0284c7"/>
-            <rect x="15" y="4" width="2" height="3" fill="#0284c7"/>
-            <rect x="17" y="2" width="2" height="2" fill="#0284c7"/>
-            <rect x="19" y="4" width="2" height="3" fill="#0284c7"/>
-            <rect x="21" y="7" width="2" height="3" fill="#0284c7"/>
+            <!-- Right pixel eye ^ (baby pink) -->
+            <rect x="13" y="7" width="2" height="3" fill="#ec4899"/>
+            <rect x="15" y="4" width="2" height="3" fill="#ec4899"/>
+            <rect x="17" y="2" width="2" height="2" fill="#ec4899"/>
+            <rect x="19" y="4" width="2" height="3" fill="#ec4899"/>
+            <rect x="21" y="7" width="2" height="3" fill="#ec4899"/>
           </svg>
         </div>
         <div class="oui-splash-badge">Wii Browser Console</div>

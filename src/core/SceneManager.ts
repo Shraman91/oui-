@@ -184,10 +184,10 @@ export class SceneManager {
     this.pauseOverlay.innerHTML = `
       <div class="oui-pause-card" style="
         background-color: #ffffff;
-        border-radius: 20px;
-        padding: 2.5rem 3rem;
-        box-shadow: 8px 8px 0px #1e293b;
-        border: 3px solid #1e293b;
+        border-radius: 24px;
+        padding: 2.5rem 3.5rem;
+        box-shadow: 8px 8px 0px #f472b6;
+        border: 3.5px solid #3b1d28;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -195,15 +195,15 @@ export class SceneManager {
         min-width: 320px;
         text-align: center;
       ">
-        <h2 style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 2rem; color: #1e293b; margin: 0;">Game Paused</h2>
+        <h2 style="font-family: 'Comfortaa', cursive, sans-serif; font-size: 2rem; color: #3b1d28; margin: 0;">Game Paused</h2>
         <div style="display: flex; flex-direction: column; gap: 0.85rem; width: 100%;">
           <button id="oui-btn-resume" style="
-            background-color: #0284c7;
+            background-color: #ec4899;
             color: #ffffff;
-            border: 2px solid #1e293b;
-            box-shadow: 3px 3px 0px #1e293b;
+            border: 2.5px solid #3b1d28;
+            box-shadow: 4px 4px 0px #3b1d28;
             padding: 0.8rem 1.5rem;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 1.05rem;
             font-weight: 700;
             cursor: pointer;
@@ -211,12 +211,12 @@ export class SceneManager {
             transition: transform 0.1s ease;
           ">Resume</button>
           <button id="oui-btn-restart" style="
-            background-color: #f1f5f9;
-            color: #1e293b;
-            border: 2px solid #1e293b;
-            box-shadow: 3px 3px 0px #1e293b;
+            background-color: #fdf2f8;
+            color: #3b1d28;
+            border: 2.5px solid #3b1d28;
+            box-shadow: 3.5px 3.5px 0px #f472b6;
             padding: 0.8rem 1.5rem;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
@@ -224,12 +224,12 @@ export class SceneManager {
             transition: transform 0.1s ease;
           ">Restart Game</button>
           <button id="oui-btn-menu" style="
-            background-color: #f1f5f9;
-            color: #1e293b;
-            border: 2px solid #1e293b;
-            box-shadow: 3px 3px 0px #1e293b;
+            background-color: #fdf2f8;
+            color: #3b1d28;
+            border: 2.5px solid #3b1d28;
+            box-shadow: 3.5px 3.5px 0px #f472b6;
             padding: 0.8rem 1.5rem;
-            border-radius: 12px;
+            border-radius: 14px;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;

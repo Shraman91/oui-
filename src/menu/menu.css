@@ -1,4 +1,4 @@
-/* Cute Flat Retro-Wii Console Styles (Zero Gradients, Zero Emojis) */
+/* Cute Pastel Baby-Pink Retro-Wii Console Styles (Zero Gradients, Zero Emojis) */
 @import './transitions.css';
 
 .oui-menu-wrapper {
@@ -11,7 +11,7 @@
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
-  background-color: #f1f5f9;
+  background-color: #fdf2f8; /* Soft baby-pink console surface */
 }
 
 /* Header */
@@ -29,7 +29,7 @@
   font-family: 'Comfortaa', cursive, sans-serif;
   font-size: 2.75rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #3b1d28;
   display: flex;
   align-items: center;
   gap: 0.2rem;
@@ -41,7 +41,7 @@
   height: 32px;
   shape-rendering: crispEdges;
   display: inline-block;
-  margin-left: 2px;
+  margin-left: 3px;
 }
 
 .oui-header-status {
@@ -50,16 +50,16 @@
   gap: 0.85rem;
 }
 
-/* Controller & Battery Status Badge */
+/* Controller & Battery Status Badge (Cute Baby-Pink Accent) */
 .oui-provider-badge {
   background-color: #ffffff;
-  border: 2px solid #1e293b;
-  box-shadow: 3px 3px 0px #1e293b;
+  border: 2.5px solid #3b1d28;
+  box-shadow: 4px 4px 0px #f472b6;
   padding: 0.45rem 1rem;
-  border-radius: 12px;
+  border-radius: 14px;
   font-size: 0.88rem;
-  font-weight: 700;
-  color: #1e293b;
+  font-weight: 800;
+  color: #831843;
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -69,14 +69,15 @@
 
 .oui-provider-badge:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #1e293b;
+  box-shadow: 6px 6px 0px #f472b6;
+  border-color: #ec4899;
 }
 
 .oui-provider-dot {
   width: 8px;
   height: 8px;
-  background-color: #22c55e;
-  border: 1.5px solid #1e293b;
+  background-color: #4ade80;
+  border: 1.5px solid #3b1d28;
   border-radius: 50%;
 }
 
@@ -107,12 +108,12 @@
   max-height: 520px;
 }
 
-/* Wii Channel Tile - Cute Retro Flat Style */
+/* Wii Channel Tile - Cute Pastel Pink Pop Style */
 .oui-channel-tile {
   background-color: #ffffff;
-  border: 3px solid #1e293b;
-  box-shadow: 5px 5px 0px #1e293b;
-  border-radius: 20px;
+  border: 3.5px solid #3b1d28;
+  box-shadow: 6px 6px 0px #f472b6;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   position: relative;
@@ -125,36 +126,36 @@
 .oui-channel-tile:hover,
 .oui-channel-tile.hovered {
   transform: translate(-3px, -3px);
-  box-shadow: 8px 8px 0px #1e293b;
-  border-color: #0284c7;
+  box-shadow: 9px 9px 0px #f472b6;
+  border-color: #ec4899;
 }
 
 .oui-channel-tile:active,
 .oui-channel-tile.pressed {
   transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px #1e293b;
+  box-shadow: 3px 3px 0px #f472b6;
 }
 
-/* Flat Screen Preview Area (Pastel solid backgrounds, zero gradients) */
+/* Pastel Solid Screen Preview Areas (Zero Gradients) */
 .oui-channel-screen {
   flex: 1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 3px solid #1e293b;
+  border-bottom: 3.5px solid #3b1d28;
 }
 
 .oui-screen-sketchboard {
-  background-color: #fef08a; /* Soft pastel butter yellow */
+  background-color: #fef08a; /* Soft pastel yellow */
 }
 
 .oui-screen-fruitninja {
-  background-color: #bbf7d0; /* Soft pastel mint green */
+  background-color: #bbf7d0; /* Soft pastel mint */
 }
 
 .oui-screen-spacefighter {
-  background-color: #e0e7ff; /* Soft pastel retro indigo/lavender */
+  background-color: #f3e8ff; /* Soft pastel lavender */
 }
 
 .oui-screen-tabletennis {
@@ -174,7 +175,7 @@
   transform: scale(1.15) translateY(-3px);
 }
 
-/* Pixel Tech Tag */
+/* Pixel Tech Tag in Cute Pink */
 .oui-channel-tag {
   position: absolute;
   top: 0.85rem;
@@ -182,11 +183,11 @@
   font-family: monospace;
   font-size: 0.75rem;
   font-weight: 800;
-  color: #1e293b;
-  background-color: #ffffff;
-  border: 2px solid #1e293b;
-  padding: 0.15rem 0.6rem;
-  border-radius: 6px;
+  color: #9d174d;
+  background-color: #fce7f3;
+  border: 2px solid #3b1d28;
+  padding: 0.2rem 0.65rem;
+  border-radius: 8px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -204,20 +205,20 @@
   font-family: 'Comfortaa', cursive, sans-serif;
   font-size: 1.3rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #3b1d28;
   text-align: center;
   letter-spacing: -0.02em;
 }
 
 .oui-channel-desc {
   font-size: 0.82rem;
-  color: #64748b;
+  color: #831843;
   margin-top: 0.15rem;
   text-align: center;
   font-weight: 700;
 }
 
-/* Wii Bottom Bar (Clean Retro Flat Style) */
+/* Wii Bottom Bar (Warm Cream with Cute Pink Accents) */
 .oui-menu-footer {
   width: 100%;
   max-width: 1140px;
@@ -226,40 +227,40 @@
   align-items: center;
   padding: 0.85rem 2rem 1.15rem 2rem;
   z-index: 2;
-  border-top: 3px solid #1e293b;
+  border-top: 3.5px solid #3b1d28;
   background-color: #ffffff;
-  border-radius: 20px 20px 0 0;
+  border-radius: 24px 24px 0 0;
 }
 
-/* Cute Retro Pill Buttons */
+/* Cute Retro Pill Buttons with Baby-Pink Pop */
 .oui-pill-btn {
-  background-color: #ffffff;
-  border: 2px solid #1e293b;
-  box-shadow: 3px 3px 0px #1e293b;
-  color: #1e293b;
+  background-color: #fce7f3;
+  border: 2.5px solid #3b1d28;
+  box-shadow: 4px 4px 0px #f472b6;
+  color: #831843;
   font-family: 'Comfortaa', cursive, sans-serif;
   font-weight: 700;
-  font-size: 0.9rem;
-  padding: 0.5rem 1.15rem;
-  border-radius: 12px;
+  font-size: 0.92rem;
+  padding: 0.5rem 1.25rem;
+  border-radius: 14px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  gap: 0.55rem;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.1s ease;
   outline: none;
 }
 
 .oui-pill-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #1e293b;
-  border-color: #0284c7;
-  color: #0284c7;
+  box-shadow: 6px 6px 0px #ec4899;
+  background-color: #fbcfe8;
+  color: #500724;
 }
 
 .oui-pill-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #1e293b;
+  box-shadow: 2px 2px 0px #f472b6;
 }
 
 .oui-btn-icon {
@@ -277,16 +278,16 @@
 
 .oui-clock {
   font-family: 'Comfortaa', monospace, sans-serif;
-  font-size: 1.45rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #3b1d28;
 }
 
 .oui-date {
   font-family: monospace;
-  font-size: 0.78rem;
-  font-weight: 700;
-  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #db2777;
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -297,10 +298,10 @@
   top: 1.25rem;
   right: 1.25rem;
   z-index: 100;
-  background-color: #ffffff;
-  border: 2px solid #1e293b;
-  box-shadow: 3px 3px 0px #1e293b;
-  border-radius: 10px;
+  background-color: #fce7f3;
+  border: 2.5px solid #3b1d28;
+  box-shadow: 4px 4px 0px #f472b6;
+  border-radius: 12px;
   width: 42px;
   height: 42px;
   cursor: pointer;
@@ -312,10 +313,10 @@
 
 .oui-ingame-pause-btn:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px #1e293b;
+  box-shadow: 6px 6px 0px #ec4899;
 }
 
 .oui-ingame-pause-btn:active {
   transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #1e293b;
+  box-shadow: 2px 2px 0px #f472b6;
 }

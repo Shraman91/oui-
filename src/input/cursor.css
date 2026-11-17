@@ -1,4 +1,4 @@
-/* Cute Pixel Hand Cursor Styles (Zero Gradients) */
+/* Cute Pixel Hand Cursor Styles (Pastel Baby-Pink & Retro Accents) */
 
 body.oui-custom-cursor,
 body.oui-custom-cursor * {
@@ -36,30 +36,30 @@ body.oui-custom-cursor * {
   transform: scale(1.12);
 }
 
-/* "P1" Badge beneath cursor */
+/* Cute Baby Pink "P1" Badge beneath cursor */
 .oui-player-badge {
   position: absolute;
   top: 26px;
   left: 12px;
-  background-color: #0284c7;
+  background-color: #f472b6;
   color: #ffffff;
   font-family: monospace;
   font-weight: 800;
   font-size: 8px;
-  padding: 1px 4px;
+  padding: 1px 5px;
   border-radius: 4px;
-  border: 1px solid #1e293b;
+  border: 1px solid #3b1d28;
   letter-spacing: 0.05em;
   white-space: nowrap;
 }
 
-/* Cute Pixel Click Sparks (Zero Gradients) */
+/* Cute Baby-Pink Pixel Click Sparks (Zero Gradients) */
 .oui-pixel-spark {
   position: absolute;
-  width: 4px;
-  height: 4px;
-  background-color: #38bdf8;
-  border: 1px solid #0284c7;
+  width: 5px;
+  height: 5px;
+  background-color: #f472b6;
+  border: 1px solid #3b1d28;
   pointer-events: none;
   animation: oui-spark-pop 0.25s steps(3) forwards;
 }

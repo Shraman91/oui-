@@ -1,4 +1,4 @@
-/* Cute Flat Pixel Boot Splash (Zero Gradients) */
+/* Cute Pastel Baby-Pink Boot Splash (Zero Gradients) */
 
 .oui-splash-container {
   position: fixed;
@@ -8,7 +8,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #f8fafc;
+  background-color: #fdf2f8; /* Soft baby pink background */
   user-select: none;
   cursor: pointer;
   transition: opacity 0.3s ease, transform 0.3s ease;
@@ -22,10 +22,10 @@
 
 .oui-splash-box {
   background-color: #ffffff;
-  border: 3px solid #1e293b;
-  box-shadow: 6px 6px 0px #1e293b;
-  border-radius: 24px;
-  padding: 3rem 4rem;
+  border: 3.5px solid #3b1d28;
+  box-shadow: 7px 7px 0px #f472b6;
+  border-radius: 28px;
+  padding: 3rem 4.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -46,51 +46,49 @@
 
 .oui-splash-logo {
   font-family: 'Comfortaa', cursive, sans-serif;
-  font-size: 4.5rem;
+  font-size: 4.8rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #3b1d28;
   display: flex;
   align-items: center;
   gap: 0.35rem;
   line-height: 1;
 }
 
-/* Cute animated pixel eyes */
+/* Cute animated baby pink pixel eyes */
 .oui-pixel-eyes-svg {
-  width: 72px;
-  height: 48px;
+  width: 76px;
+  height: 50px;
   shape-rendering: crispEdges;
   animation: oui-pixel-blink 2.2s infinite steps(1);
 }
 
 @keyframes oui-pixel-blink {
   0%, 85%, 100% {
-    /* open happy eyes ^^ */
     opacity: 1;
   }
   90% {
-    /* blink line -- */
     opacity: 0.2;
   }
 }
 
 .oui-splash-badge {
-  background-color: #e0f2fe;
-  border: 2px solid #0284c7;
-  color: #0369a1;
+  background-color: #fce7f3;
+  border: 2px solid #f472b6;
+  color: #be185d;
   font-family: 'Comfortaa', monospace, sans-serif;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
-  padding: 0.3rem 0.9rem;
-  border-radius: 8px;
+  padding: 0.35rem 1rem;
+  border-radius: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .oui-splash-prompt {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  color: #64748b;
+  color: #db2777;
   margin-top: 1.5rem;
   letter-spacing: 0.05em;
   animation: oui-prompt-pulse 1.2s infinite alternate;
@@ -98,7 +96,7 @@
 
 @keyframes oui-prompt-pulse {
   0% {
-    opacity: 0.4;
+    opacity: 0.45;
   }
   100% {
     opacity: 1;
