@@ -185,6 +185,76 @@ export class PairingModal {
       this.updateRemoteStatus(remoteId, false);
     });
 
+    let p1PacketCount = 0;
+    let p1LastHzTime = performance.now();
+    let p1Hz = 60;
+    let lastTelemetryUpdate1 = 0;
+    let lastTelemetryUpdate2 = 0;
+
+    this.relayClient.onSensorData((remoteId, packet) => {
+      const now = performance.now();
+      if (remoteId === 1) {
+        p1PacketCount++;
+        if (now - p1LastHzTime >= 1000) {
+          p1Hz = Math.round((p1PacketCount * 1000) / (now - p1LastHzTime));
+          p1PacketCount = 0;
+          p1LastHzTime = now;
+        }
+        if (now - lastTelemetryUpdate1 > 80 && this.isOpen) {
+          lastTelemetryUpdate1 = now;
+          if (this.remote1Status && !this.remote1Status.textContent?.includes('Pressed')) {
+            this.remote1Status.textContent = `${p1Hz} Hz • α:${packet.orientation.alpha.toFixed(0)}° β:${packet.orientation.beta.toFixed(0)}° γ:${packet.orientation.gamma.toFixed(0)}°`;
+            this.remote1Status.style.color = '#0284c7';
+          }
+        }
+      } else if (remoteId === 2) {
+        if (now - lastTelemetryUpdate2 > 80 && this.isOpen) {
+          lastTelemetryUpdate2 = now;
+          if (this.remote2Status && !this.remote2Status.textContent?.includes('Pressed')) {
+            this.remote2Status.textContent = `Live • α:${packet.orientation.alpha.toFixed(0)}° β:${packet.orientation.beta.toFixed(0)}° γ:${packet.orientation.gamma.toFixed(0)}°`;
+            this.remote2Status.style.color = '#0284c7';
+          }
+        }
+      }
+    });
+
+    this.relayClient.onButtonEvent((remoteId, event) => {
+      const statusText = remoteId === 1 ? this.remote1Status : this.remote2Status;
+      const card = remoteId === 1 ? this.remote1Card : this.remote2Card;
+      if (statusText && card) {
+        if (event.state === 'down') {
+          statusText.textContent = `Button ${event.button} Pressed!`;
+          statusText.style.color = '#ec4899';
+          card.style.transform = 'scale(1.03)';
+          card.style.borderColor = '#ec4899';
+        } else {
+          statusText.textContent = `Connected (Remote ${remoteId})`;
+          statusText.style.color = '#16a34a';
+          card.style.transform = 'scale(1)';
+          card.style.borderColor = '#86efac';
+        }
+      }
+    });
+
+    this.relayClient.onRecenter((remoteId) => {
+      const statusText = remoteId === 1 ? this.remote1Status : this.remote2Status;
+      const card = remoteId === 1 ? this.remote1Card : this.remote2Card;
+      if (statusText && card) {
+        statusText.textContent = 'Recenter Triggered! 🎯';
+        statusText.style.color = '#0284c7';
+        card.style.borderColor = '#38bdf8';
+        setTimeout(() => {
+          if (statusText) {
+            statusText.textContent = `Connected (Remote ${remoteId})`;
+            statusText.style.color = '#16a34a';
+          }
+          if (card) {
+            card.style.borderColor = '#86efac';
+          }
+        }, 1200);
+      }
+    });
+
     this.unsubscribeConnChange = this.relayClient.onConnectionChange((connected) => {
       if (this.relayStatusDot) {
         this.relayStatusDot.className = `oui-pairing-relay-dot ${connected ? 'connected' : 'disconnected'}`;

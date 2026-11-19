@@ -8,6 +8,8 @@ export type ButtonId =
   | 'PLUS'
   | 'MINUS'
   | 'HOME'
+  | 'ONE'
+  | 'TWO'
   | 'RECENTER';
 
 export interface SensorPacket {

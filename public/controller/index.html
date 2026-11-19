@@ -10,16 +10,19 @@
   <style>
     :root {
       --bg: #f8f5f6;
-      --card-bg: #ffffff;
+      --remote-shell: #ffffff;
+      --remote-border: #382c33;
       --pink-primary: #f472b6;
       --pink-soft: #fce7f3;
-      --pink-hover: #ec4899;
+      --pink-deep: #db2777;
       --text-dark: #382c33;
       --text-muted: #8b7582;
-      --border: #f3d7e5;
-      --active-cyan: #38bdf8;
-      --success: #34d399;
-      --shadow: 0 10px 25px -5px rgba(244, 114, 182, 0.2), 0 8px 10px -6px rgba(56, 44, 51, 0.05);
+      --cyan-home: #38bdf8;
+      --cyan-led: #0284c7;
+      --btn-bg: #f3f4f6;
+      --btn-border: #cbd5e1;
+      --btn-active: #fce7f3;
+      --shadow: 0 16px 36px -8px rgba(244, 114, 182, 0.25), 0 8px 16px -4px rgba(56, 44, 51, 0.08);
     }
 
     * {
@@ -29,6 +32,7 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
       -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
     body {
@@ -41,18 +45,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: 12px 16px;
       overflow-x: hidden;
+      overscroll-behavior: none;
     }
 
+    /* Outer Wii Remote Casing */
     .remote-shell {
       width: 100%;
-      max-width: 340px;
-      background: var(--card-bg);
-      border-radius: 40px;
-      border: 3px solid var(--border);
-      box-shadow: var(--shadow);
-      padding: 24px 20px 28px 20px;
+      max-width: 320px;
+      background: var(--remote-shell);
+      border-radius: 46px;
+      border: 3px solid var(--remote-border);
+      box-shadow: var(--shadow), 4px 4px 0px var(--pink-primary);
+      padding: 16px 20px 22px 20px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -61,226 +67,483 @@
 
     /* Top IR sensor emitter window */
     .remote-ir-window {
-      width: 48px;
+      width: 56px;
       height: 7px;
-      background: #4a3b44;
+      background: #2d2228;
       border-radius: 4px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
+    }
+
+    /* Remote Header Row */
+    .remote-header-row {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .power-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #fee2e2;
+      border: 2px solid #ef4444;
+      color: #b91c1c;
+      font-size: 12px;
+      font-weight: 900;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 1px 1px 0px #ef4444;
+    }
+
+    .power-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: none;
     }
 
     .brand-title {
-      font-size: 24px;
-      font-weight: 800;
+      font-size: 20px;
+      font-weight: 900;
       letter-spacing: -0.5px;
       color: var(--text-dark);
       display: flex;
       align-items: center;
-      gap: 6px;
-      margin-bottom: 4px;
+      gap: 4px;
     }
 
     .brand-title span.accent {
       color: var(--pink-primary);
     }
 
-    .brand-subtitle {
+    .recenter-top-btn {
+      background: var(--pink-soft);
+      border: 2px solid var(--remote-border);
+      border-radius: 12px;
+      padding: 4px 8px;
       font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--text-muted);
-      margin-bottom: 20px;
+      font-weight: 800;
+      color: var(--text-dark);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      box-shadow: 1.5px 1.5px 0px var(--pink-primary);
     }
 
-    .status-card {
+    .recenter-top-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: none;
+      background: var(--pink-primary);
+      color: #ffffff;
+    }
+
+    /* Connect & Setup Screen */
+    .setup-screen {
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 0;
+    }
+
+    .setup-instructions {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
       background: var(--pink-soft);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 12px 14px;
+      border: 1.5px solid #f3d7e5;
+      border-radius: 14px;
+      padding: 10px 12px;
+      width: 100%;
+    }
+
+    .room-input-box {
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-bottom: 18px;
-      text-align: center;
-    }
-
-    .status-indicator {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      font-size: 14px;
-      font-weight: 700;
-    }
-
-    .status-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #cbd5e1;
-      transition: background 0.3s ease;
-    }
-
-    .status-dot.connected {
-      background: var(--success);
-      box-shadow: 0 0 10px rgba(52, 211, 153, 0.7);
-    }
-
-    .status-dot.connecting {
-      background: #fbbf24;
-      animation: pulse 1s infinite alternate;
-    }
-
-    .status-dot.error {
-      background: #f87171;
-    }
-
-    @keyframes pulse {
-      from { opacity: 0.4; }
-      to { opacity: 1; }
-    }
-
-    .ping-text {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    .room-input-group {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-bottom: 20px;
     }
 
     .room-label {
       font-size: 11px;
-      font-weight: 700;
+      font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 1px;
       color: var(--text-muted);
+      text-align: center;
     }
 
     .room-input {
       width: 100%;
       text-align: center;
-      font-size: 26px;
-      font-weight: 800;
-      letter-spacing: 6px;
+      font-size: 28px;
+      font-weight: 900;
+      letter-spacing: 8px;
       text-transform: uppercase;
       color: var(--text-dark);
       background: #faf7f8;
-      border: 2px solid var(--border);
-      border-radius: 14px;
+      border: 2.5px solid var(--remote-border);
+      border-radius: 16px;
       padding: 10px 12px;
       outline: none;
-      transition: border-color 0.2s ease;
+      box-shadow: 2px 2px 0px var(--pink-primary);
     }
 
-    .room-input:focus {
-      border-color: var(--pink-primary);
-      background: #ffffff;
-    }
-
-    .btn-primary {
+    .btn-connect-start {
       width: 100%;
       background: var(--pink-primary);
       color: #ffffff;
-      border: none;
-      border-radius: 14px;
-      padding: 14px 18px;
+      border: 2.5px solid var(--remote-border);
+      border-radius: 16px;
+      padding: 14px;
       font-size: 16px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(244, 114, 182, 0.4);
-      transition: all 0.15s ease;
+      box-shadow: 3px 3px 0px var(--text-dark);
+      transition: all 0.1s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
     }
 
-    .btn-primary:active {
-      transform: scale(0.97);
-      background: var(--pink-hover);
+    .btn-connect-start:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0px var(--text-dark);
+      background: var(--pink-deep);
     }
 
-    .btn-primary:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
+    /* Live Remote Controls View (Shown when connected) */
+    .controller-view {
+      width: 100%;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Telemetry Pill Bar */
+    .telemetry-bar {
+      width: 100%;
+      background: #faf7f8;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 6px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .status-dot-mini {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    /* D-PAD */
+    .dpad-container {
+      width: 130px;
+      height: 130px;
+      position: relative;
+      margin: 6px 0;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      background: #f1f5f9;
+      border: 2px solid var(--remote-border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background 0.05s ease, transform 0.05s ease;
+    }
+
+    .dpad-btn.active, .dpad-btn:active {
+      background: var(--pink-soft);
+      border-color: var(--pink-deep);
+      transform: scale(0.92);
+    }
+
+    .dpad-up {
+      top: 0;
+      left: 44px;
+      width: 42px;
+      height: 44px;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .dpad-down {
+      bottom: 0;
+      left: 44px;
+      width: 42px;
+      height: 44px;
+      border-radius: 0 0 10px 10px;
+    }
+
+    .dpad-left {
+      top: 44px;
+      left: 0;
+      width: 44px;
+      height: 42px;
+      border-radius: 10px 0 0 10px;
+    }
+
+    .dpad-right {
+      top: 44px;
+      right: 0;
+      width: 44px;
+      height: 42px;
+      border-radius: 0 10px 10px 0;
+    }
+
+    .dpad-center {
+      position: absolute;
+      top: 44px;
+      left: 44px;
+      width: 42px;
+      height: 42px;
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    /* Big Iconic A Button */
+    .btn-a-wrapper {
+      margin: 4px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .btn-a {
+      width: 82px;
+      height: 82px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 3.5px solid var(--remote-border);
+      box-shadow: 0 6px 0px var(--remote-border), 0 8px 16px rgba(244, 114, 182, 0.3);
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--text-dark);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.05s ease;
+      position: relative;
+    }
+
+    .btn-a::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border-radius: 50%;
+      border: 2px dashed #fbcfe8;
+      pointer-events: none;
+    }
+
+    .btn-a.active, .btn-a:active {
+      transform: translateY(5px);
+      box-shadow: 0 1px 0px var(--remote-border);
+      background: var(--pink-soft);
+      color: var(--pink-deep);
+    }
+
+    /* B Trigger Bar */
+    .btn-b-wrapper {
+      width: 100%;
+      margin: 4px 0;
+    }
+
+    .btn-b-trigger {
+      width: 100%;
+      background: #f8fafc;
+      border: 2.5px solid var(--remote-border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      font-size: 15px;
+      font-weight: 900;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 0px var(--remote-border);
+      cursor: pointer;
+      transition: all 0.05s ease;
+    }
+
+    .btn-b-trigger.active, .btn-b-trigger:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0px var(--remote-border);
+      background: #fce7f3;
+      border-color: var(--pink-deep);
+      color: var(--pink-deep);
+    }
+
+    .trigger-stripes {
+      display: flex;
+      gap: 4px;
+    }
+
+    .trigger-stripe {
+      width: 4px;
+      height: 14px;
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
+
+    /* Minus / Home / Plus Row */
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      margin: 4px 0;
+    }
+
+    .btn-small-round {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #f1f5f9;
+      border: 2px solid var(--remote-border);
+      box-shadow: 0 2.5px 0px var(--remote-border);
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.05s ease;
+    }
+
+    .btn-small-round.active, .btn-small-round:active {
+      transform: translateY(2px);
+      box-shadow: none;
+      background: var(--pink-soft);
+    }
+
+    .btn-home {
+      background: #e0f2fe;
+      border-color: #0284c7;
+      color: #0284c7;
+      box-shadow: 0 2.5px 0px #0284c7;
+    }
+
+    .btn-home.active, .btn-home:active {
+      background: #38bdf8;
+      color: #ffffff;
+      transform: translateY(2px);
       box-shadow: none;
     }
 
-    .test-actions-group {
-      width: 100%;
-      margin-top: 14px;
+    /* 1 and 2 Buttons Row */
+    .numeric-buttons-row {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin: 4px 0;
     }
 
-    .btn-sub {
-      flex: 1;
-      background: #f1f5f9;
+    .btn-numeric {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 2px solid var(--remote-border);
+      box-shadow: 0 2.5px 0px var(--remote-border);
+      font-size: 15px;
+      font-weight: 900;
       color: var(--text-dark);
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 10px 8px;
-      font-size: 13px;
-      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: all 0.05s ease;
     }
 
-    .btn-sub:active {
-      background: #e2e8f0;
+    .btn-numeric.active, .btn-numeric:active {
+      transform: translateY(2px);
+      box-shadow: none;
+      background: var(--pink-soft);
+      border-color: var(--pink-deep);
+      color: var(--pink-deep);
     }
 
-    /* Player indicator LEDs at the bottom */
+    /* Speaker simulation grille */
+    .speaker-grille {
+      display: grid;
+      grid-template-columns: repeat(4, 4px);
+      grid-gap: 5px;
+      margin: 8px 0;
+    }
+
+    .speaker-hole {
+      width: 4px;
+      height: 4px;
+      background: #cbd5e1;
+      border-radius: 50%;
+    }
+
+    /* Player LED indicators */
     .player-leds-container {
-      margin-top: 28px;
+      margin-top: 8px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 8px;
+      gap: 4px;
     }
 
     .player-leds {
       display: flex;
-      gap: 14px;
+      gap: 12px;
     }
 
     .led-dot {
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: #e2e8f0;
       border: 1px solid #cbd5e1;
-      transition: all 0.3s ease;
+      transition: all 0.2s ease;
     }
 
     .led-dot.active {
-      background: var(--active-cyan);
-      border-color: #0284c7;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+      background: var(--cyan-led);
+      border-color: #0369a1;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.95);
     }
 
     .led-labels {
       display: flex;
-      gap: 14px;
-      font-size: 10px;
-      font-weight: 700;
+      gap: 12px;
+      font-size: 9px;
+      font-weight: 800;
       color: var(--text-muted);
     }
 
     .led-labels span {
-      width: 12px;
+      width: 10px;
       text-align: center;
-    }
-
-    .footer-note {
-      margin-top: 20px;
-      font-size: 11px;
-      color: var(--text-muted);
-      text-align: center;
-      line-height: 1.4;
     }
   </style>
 </head>
@@ -288,76 +551,284 @@
 
   <div class="remote-shell">
     <div class="remote-ir-window"></div>
-    <div class="brand-title">oui<span class="accent">^^</span></div>
-    <div class="brand-subtitle">Wii Remote Controller</div>
 
-    <div class="status-card">
-      <div class="status-indicator">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusText">Disconnected</span>
+    <div class="remote-header-row">
+      <button class="power-btn" id="powerBtn" title="Power / Disconnect">⏻</button>
+      <div class="brand-title">oui<span class="accent">^^</span></div>
+      <button class="recenter-top-btn" id="topRecenterBtn" title="Recenter Pointer">🎯 Recenter</button>
+    </div>
+
+    <!-- 1. Setup / Pairing Screen -->
+    <div class="setup-screen" id="setupScreen">
+      <div class="setup-instructions">
+        Wii Remote motion controls require motion sensor access and network relay pairing.
       </div>
-      <div class="ping-text" id="pingText">Ping: -- ms</div>
-    </div>
 
-    <div class="room-input-group">
-      <label class="room-label" for="roomInput">Console Room Code</label>
-      <input type="text" id="roomInput" class="room-input" maxlength="4" placeholder="----" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
-    </div>
-
-    <button id="connectBtn" class="btn-primary">Connect to Console</button>
-
-    <div class="test-actions-group" id="testActions" style="display: none;">
-      <button id="testRecenterBtn" class="btn-sub">🎯 Recenter</button>
-      <button id="testButtonABtn" class="btn-sub">🅰️ Press A</button>
-    </div>
-
-    <div class="player-leds-container">
-      <div class="player-leds">
-        <div class="led-dot" id="led1"></div>
-        <div class="led-dot" id="led2"></div>
-        <div class="led-dot" id="led3"></div>
-        <div class="led-dot" id="led4"></div>
+      <div class="room-input-box">
+        <label class="room-label" for="roomInput">Console Room Code</label>
+        <input type="text" id="roomInput" class="room-input" maxlength="4" placeholder="----" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
-      <div class="led-labels">
-        <span>1</span>
-        <span>2</span>
-        <span>3</span>
-        <span>4</span>
-      </div>
+
+      <button id="connectStartBtn" class="btn-connect-start">
+        <span>🎮</span> Connect & Start Remote
+      </button>
     </div>
 
-    <p class="footer-note">
-      Pairing established via WebSocket relay. Step 2 will render the full Wii Remote motion sensors & physical buttons.
-    </p>
+    <!-- 2. Interactive Controller Screen -->
+    <div class="controller-view" id="controllerView">
+      <div class="telemetry-bar">
+        <div><span class="status-dot-mini"></span><span id="telRemoteId">Remote 1</span></div>
+        <div id="telHz">60 Hz</div>
+        <div id="telPing">Ping: -- ms</div>
+      </div>
+
+      <!-- D-Pad -->
+      <div class="dpad-container">
+        <button class="dpad-btn dpad-up" data-btn="DPAD_UP">▲</button>
+        <button class="dpad-btn dpad-left" data-btn="DPAD_LEFT">◀</button>
+        <div class="dpad-center"></div>
+        <button class="dpad-btn dpad-right" data-btn="DPAD_RIGHT">▶</button>
+        <button class="dpad-btn dpad-down" data-btn="DPAD_DOWN">▼</button>
+      </div>
+
+      <!-- A Button -->
+      <div class="btn-a-wrapper">
+        <button class="btn-a" id="btnA" data-btn="A">A</button>
+      </div>
+
+      <!-- B Trigger Button -->
+      <div class="btn-b-wrapper">
+        <button class="btn-b-trigger" id="btnB" data-btn="B">
+          <div class="trigger-stripes">
+            <span class="trigger-stripe"></span>
+            <span class="trigger-stripe"></span>
+          </div>
+          <span>B TRIGGER</span>
+          <div class="trigger-stripes">
+            <span class="trigger-stripe"></span>
+            <span class="trigger-stripe"></span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Minus / Home / Plus -->
+      <div class="control-row">
+        <button class="btn-small-round" data-btn="MINUS">-</button>
+        <button class="btn-small-round btn-home" data-btn="HOME" title="Home">⌂</button>
+        <button class="btn-small-round" data-btn="PLUS">+</button>
+      </div>
+
+      <!-- 1 and 2 Buttons -->
+      <div class="numeric-buttons-row">
+        <button class="btn-numeric" data-btn="ONE">1</button>
+        <button class="btn-numeric" data-btn="TWO">2</button>
+      </div>
+
+      <!-- Simulated Speaker Holes -->
+      <div class="speaker-grille">
+        <span class="speaker-hole"></span><span class="speaker-hole"></span><span class="speaker-hole"></span><span class="speaker-hole"></span>
+        <span class="speaker-hole"></span><span class="speaker-hole"></span><span class="speaker-hole"></span><span class="speaker-hole"></span>
+        <span class="speaker-hole"></span><span class="speaker-hole"></span><span class="speaker-hole"></span><span class="speaker-hole"></span>
+      </div>
+
+      <!-- Player LEDs -->
+      <div class="player-leds-container">
+        <div class="player-leds">
+          <div class="led-dot" id="led1"></div>
+          <div class="led-dot" id="led2"></div>
+          <div class="led-dot" id="led3"></div>
+          <div class="led-dot" id="led4"></div>
+        </div>
+        <div class="led-labels">
+          <span>1</span>
+          <span>2</span>
+          <span>3</span>
+          <span>4</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
     (function () {
+      // 1. Bitmask Flags
+      const BUTTON_MASKS = {
+        A: 1 << 0,
+        B: 1 << 1,
+        DPAD_UP: 1 << 2,
+        DPAD_DOWN: 1 << 3,
+        DPAD_LEFT: 1 << 4,
+        DPAD_RIGHT: 1 << 5,
+        PLUS: 1 << 6,
+        MINUS: 1 << 7,
+        HOME: 1 << 8,
+        ONE: 1 << 9,
+        TWO: 1 << 10,
+        RECENTER: 1 << 11
+      };
+
+      let buttonBitmask = 0;
+
+      // 2. Sensors State Buffer
+      const sensorData = {
+        orientation: { alpha: 0, beta: 0, gamma: 0 },
+        rotationRate: { alpha: 0, beta: 0, gamma: 0 },
+        accel: { x: 0, y: 0, z: 0 },
+        accelG: { x: 0, y: 0, z: 0 }
+      };
+
       const urlParams = new URLSearchParams(window.location.search);
       const prefilledRoom = urlParams.get('room') || '';
-      
+
+      const setupScreen = document.getElementById('setupScreen');
+      const controllerView = document.getElementById('controllerView');
       const roomInput = document.getElementById('roomInput');
-      const connectBtn = document.getElementById('connectBtn');
-      const statusDot = document.getElementById('statusDot');
-      const statusText = document.getElementById('statusText');
-      const pingText = document.getElementById('pingText');
-      const testActions = document.getElementById('testActions');
-      const testRecenterBtn = document.getElementById('testRecenterBtn');
-      const testButtonABtn = document.getElementById('testButtonABtn');
+      const connectStartBtn = document.getElementById('connectStartBtn');
+      const powerBtn = document.getElementById('powerBtn');
+      const topRecenterBtn = document.getElementById('topRecenterBtn');
+      const telRemoteId = document.getElementById('telRemoteId');
+      const telHz = document.getElementById('telHz');
+      const telPing = document.getElementById('telPing');
 
       if (prefilledRoom) {
         roomInput.value = prefilledRoom.toUpperCase();
       }
 
-      let socket = null;
-      let pingInterval = null;
-      let lastPingTime = 0;
-      let remoteId = null;
-
-      function updateStatus(state, message) {
-        statusDot.className = 'status-dot ' + state;
-        statusText.textContent = message;
+      // 3. Audio & Haptics Engine
+      let audioCtx = null;
+      function initAudio() {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            audioCtx = new AudioContextClass();
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
       }
+
+      function triggerHaptic(duration = 90, pattern = null) {
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator && typeof navigator.vibrate === 'function') {
+          try {
+            navigator.vibrate(pattern || duration);
+          } catch (e) {
+            // Ignored if blocked
+          }
+        }
+
+        // Web Audio Synthesizer Pop
+        try {
+          initAudio();
+          if (audioCtx && audioCtx.state === 'running') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(duration > 80 ? 240 : 640, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.04);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+          }
+        } catch (e) {
+          // Audio fallback silent fail
+        }
+      }
+
+      // 4. Screen Wake Lock (Keeps controller awake)
+      let wakeLock = null;
+      async function requestWakeLock() {
+        if ('wakeLock' in navigator && typeof navigator.wakeLock.request === 'function') {
+          try {
+            wakeLock = await navigator.wakeLock.request('screen');
+            wakeLock.addEventListener('release', () => {
+              wakeLock = null;
+            });
+          } catch (err) {
+            console.warn('Wake Lock error:', err);
+          }
+        }
+      }
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && !wakeLock) {
+          requestWakeLock();
+        }
+      });
+
+      // 5. Motion Listeners
+      let motionStarted = false;
+      async function requestMotionPermissions() {
+        // iOS 13+ permission request
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          try {
+            const orientationPerm = await DeviceOrientationEvent.requestPermission();
+            if (orientationPerm !== 'granted') {
+              console.warn('DeviceOrientation permission denied');
+            }
+          } catch (e) {
+            console.warn('DeviceOrientation request error:', e);
+          }
+        }
+
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+          try {
+            const motionPerm = await DeviceMotionEvent.requestPermission();
+            if (motionPerm !== 'granted') {
+              console.warn('DeviceMotion permission denied');
+            }
+          } catch (e) {
+            console.warn('DeviceMotion request error:', e);
+          }
+        }
+
+        if (!motionStarted) {
+          window.addEventListener('deviceorientation', handleOrientation, true);
+          window.addEventListener('devicemotion', handleMotion, true);
+          motionStarted = true;
+        }
+      }
+
+      function handleOrientation(event) {
+        sensorData.orientation.alpha = event.alpha || 0;
+        sensorData.orientation.beta = event.beta || 0;
+        sensorData.orientation.gamma = event.gamma || 0;
+      }
+
+      function handleMotion(event) {
+        if (event.rotationRate) {
+          sensorData.rotationRate.alpha = event.rotationRate.alpha || 0;
+          sensorData.rotationRate.beta = event.rotationRate.beta || 0;
+          sensorData.rotationRate.gamma = event.rotationRate.gamma || 0;
+        }
+
+        if (event.acceleration) {
+          sensorData.accel.x = event.acceleration.x || 0;
+          sensorData.accel.y = event.acceleration.y || 0;
+          sensorData.accel.z = event.acceleration.z || 0;
+        }
+
+        if (event.accelerationIncludingGravity) {
+          sensorData.accelG.x = event.accelerationIncludingGravity.x || 0;
+          sensorData.accelG.y = event.accelerationIncludingGravity.y || 0;
+          sensorData.accelG.z = event.accelerationIncludingGravity.z || 0;
+        }
+      }
+
+      // 6. WebSocket Connection
+      let socket = null;
+      let remoteId = null;
+      let pingInterval = null;
+      let streamTimer = null;
+      let lastPingTime = 0;
+      let packetCount = 0;
+      let lastHzMeasureTime = performance.now();
 
       function updateLeds(assignedId) {
         document.getElementById('led1').classList.toggle('active', assignedId === 1);
@@ -366,7 +837,11 @@
         document.getElementById('led4').classList.toggle('active', assignedId === 4);
       }
 
-      function connectToRelay() {
+      function connectAndStart() {
+        initAudio();
+        requestWakeLock();
+        requestMotionPermissions();
+
         const roomCode = roomInput.value.trim().toUpperCase();
         if (!roomCode || roomCode.length < 4) {
           alert('Please enter a valid 4-character room code');
@@ -377,31 +852,27 @@
           socket.close();
         }
 
-        updateStatus('connecting', 'Connecting to relay...');
-        connectBtn.disabled = true;
+        connectStartBtn.disabled = true;
+        connectStartBtn.textContent = 'Connecting...';
 
-        // Connect via WSS / WS matching current page protocol
         const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
 
         try {
           socket = new WebSocket(wsUrl);
         } catch (e) {
-          updateStatus('error', 'Failed to initialize WS');
-          connectBtn.disabled = false;
+          alert('Failed to initialize WebSocket');
+          connectStartBtn.disabled = false;
+          connectStartBtn.textContent = 'Connect & Start Remote';
           return;
         }
 
         socket.onopen = () => {
-          updateStatus('connecting', 'Joining room ' + roomCode + '...');
-          // Send join_room
-          const joinMsg = {
-            type: 'join_room',
-            roomCode: roomCode
-          };
-          socket.send(JSON.stringify(joinMsg));
+          // Join room
+          socket.send(JSON.stringify({ type: 'join_room', roomCode }));
 
-          // Start ping
+          // Heartbeat ping
+          if (pingInterval) clearInterval(pingInterval);
           pingInterval = setInterval(() => {
             if (socket && socket.readyState === WebSocket.OPEN) {
               lastPingTime = performance.now();
@@ -413,79 +884,184 @@
         socket.onmessage = (event) => {
           try {
             const data = JSON.parse(event.data);
-            
+
             if (data.type === 'joined') {
               remoteId = data.remoteId;
-              updateStatus('connected', `Connected as Remote ${remoteId}`);
+              setupScreen.style.display = 'none';
+              controllerView.style.display = 'flex';
+              telRemoteId.textContent = `Remote ${remoteId}`;
               updateLeds(remoteId);
-              connectBtn.textContent = 'Connected';
-              connectBtn.disabled = true;
-              testActions.style.display = 'flex';
+              triggerHaptic(140, [80, 50, 80]); // Welcome rumble
+              start60HzStream();
             } else if (data.type === 'pong') {
               const rtt = Math.round(performance.now() - lastPingTime);
-              pingText.textContent = `Ping: ${rtt} ms`;
+              telPing.textContent = `Ping: ${rtt} ms`;
             } else if (data.type === 'rumble') {
-              if (navigator.vibrate) {
-                navigator.vibrate(data.payload?.duration || 100);
-              }
+              const dur = data.payload?.duration || 120;
+              const pat = data.payload?.pattern || null;
+              triggerHaptic(dur, pat);
             } else if (data.type === 'error') {
-              updateStatus('error', data.message || 'Error occurred');
-              connectBtn.disabled = false;
+              alert(data.message || 'Room connection error');
+              connectStartBtn.disabled = false;
+              connectStartBtn.textContent = 'Connect & Start Remote';
             }
           } catch (e) {
-            console.error('Failed to parse msg', e);
+            console.error('Error handling WS msg:', e);
           }
         };
 
         socket.onclose = () => {
-          updateStatus('error', 'Disconnected from relay');
-          connectBtn.disabled = false;
-          connectBtn.textContent = 'Reconnect';
-          testActions.style.display = 'none';
+          stop60HzStream();
+          setupScreen.style.display = 'flex';
+          controllerView.style.display = 'none';
+          connectStartBtn.disabled = false;
+          connectStartBtn.textContent = 'Reconnect to Console';
           updateLeds(null);
           if (pingInterval) clearInterval(pingInterval);
         };
 
         socket.onerror = (err) => {
-          console.error('WS error', err);
-          updateStatus('error', 'Connection error');
-          connectBtn.disabled = false;
+          console.error('WS error:', err);
+          connectStartBtn.disabled = false;
+          connectStartBtn.textContent = 'Connect & Start Remote';
         };
       }
 
-      connectBtn.addEventListener('click', connectToRelay);
+      // 7. ~60 Hz Sensor Packet Streaming
+      function start60HzStream() {
+        stop60HzStream();
+        lastHzMeasureTime = performance.now();
+        packetCount = 0;
 
-      // Auto-connect if query param has room
-      if (prefilledRoom.length === 4) {
-        setTimeout(connectToRelay, 300);
+        streamTimer = setInterval(() => {
+          if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
+          const packet = {
+            t: performance.now(),
+            orientation: {
+              alpha: sensorData.orientation.alpha,
+              beta: sensorData.orientation.beta,
+              gamma: sensorData.orientation.gamma
+            },
+            rotationRate: {
+              alpha: sensorData.rotationRate.alpha,
+              beta: sensorData.rotationRate.beta,
+              gamma: sensorData.rotationRate.gamma
+            },
+            accel: {
+              x: sensorData.accel.x,
+              y: sensorData.accel.y,
+              z: sensorData.accel.z
+            },
+            accelG: {
+              x: sensorData.accelG.x,
+              y: sensorData.accelG.y,
+              z: sensorData.accelG.z
+            },
+            buttons: buttonBitmask
+          };
+
+          socket.send(JSON.stringify({
+            type: 'sensor_data',
+            payload: packet
+          }));
+
+          packetCount++;
+          const now = performance.now();
+          if (now - lastHzMeasureTime >= 1000) {
+            const hz = Math.round((packetCount * 1000) / (now - lastHzMeasureTime));
+            telHz.textContent = `${hz} Hz`;
+            packetCount = 0;
+            lastHzMeasureTime = now;
+          }
+        }, 16); // ~60 Hz (16.6ms)
       }
 
-      // Test actions for Step 1 verification
-      testRecenterBtn.addEventListener('click', () => {
+      function stop60HzStream() {
+        if (streamTimer) {
+          clearInterval(streamTimer);
+          streamTimer = null;
+        }
+      }
+
+      // 8. Immediate Button Event Handling
+      function sendButtonEvent(btn, state) {
+        const mask = BUTTON_MASKS[btn];
+        if (mask) {
+          if (state === 'down') {
+            buttonBitmask |= mask;
+          } else {
+            buttonBitmask &= ~mask;
+          }
+        }
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'button_event',
+            payload: { button: btn, state }
+          }));
+        }
+      }
+
+      function sendRecenter() {
+        triggerHaptic(90);
         if (socket && socket.readyState === WebSocket.OPEN) {
           socket.send(JSON.stringify({ type: 'recenter' }));
-          if (navigator.vibrate) navigator.vibrate(50);
+        }
+      }
+
+      // Bind all button elements with data-btn attribute
+      const buttonElements = document.querySelectorAll('[data-btn]');
+      let bHoldTimer = null;
+
+      buttonElements.forEach((el) => {
+        const btnId = el.getAttribute('data-btn');
+
+        function onDown(e) {
+          e.preventDefault();
+          el.classList.add('active');
+          triggerHaptic(60);
+          sendButtonEvent(btnId, 'down');
+
+          // Hold B for 1 second to trigger auto-recenter
+          if (btnId === 'B') {
+            bHoldTimer = setTimeout(() => {
+              sendRecenter();
+              triggerHaptic(160, [70, 40, 70]);
+            }, 1000);
+          }
+        }
+
+        function onUp(e) {
+          e.preventDefault();
+          el.classList.remove('active');
+          sendButtonEvent(btnId, 'up');
+
+          if (btnId === 'B' && bHoldTimer) {
+            clearTimeout(bHoldTimer);
+            bHoldTimer = null;
+          }
+        }
+
+        el.addEventListener('touchstart', onDown, { passive: false });
+        el.addEventListener('touchend', onUp, { passive: false });
+        el.addEventListener('pointerdown', onDown);
+        el.addEventListener('pointerup', onUp);
+        el.addEventListener('pointercancel', onUp);
+      });
+
+      // Recenter Buttons
+      topRecenterBtn.addEventListener('click', sendRecenter);
+
+      // Power button (Disconnect)
+      powerBtn.addEventListener('click', () => {
+        triggerHaptic(60);
+        if (socket) {
+          socket.close();
         }
       });
 
-      testButtonABtn.addEventListener('pointerdown', () => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'button_event',
-            payload: { button: 'A', state: 'down' }
-          }));
-          if (navigator.vibrate) navigator.vibrate(30);
-        }
-      });
-
-      testButtonABtn.addEventListener('pointerup', () => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-          socket.send(JSON.stringify({
-            type: 'button_event',
-            payload: { button: 'A', state: 'up' }
-          }));
-        }
-      });
+      connectStartBtn.addEventListener('click', connectAndStart);
     })();
   </script>
 </body>
