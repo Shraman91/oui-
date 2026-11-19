@@ -39,10 +39,11 @@ const roomManager = new RoomManager();
 
 // 1. Static HTTP/HTTPS Request Handler
 function handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
-  // Enable CORS
+  // Enable CORS & Mobile Motion Permissions Policy
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Permissions-Policy', 'accelerometer=*, gyroscope=*, magnetometer=*');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);

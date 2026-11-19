@@ -15,6 +15,7 @@ export class Cursor {
   private isHovering = false;
   private showPlayerBadge: boolean;
   private hoverFrameCounter = 0;
+  private lastHoveredTile: HTMLElement | null = null;
 
   private unsubPressA?: () => void;
   private unsubReleaseA?: () => void;
@@ -52,11 +53,61 @@ export class Cursor {
       this.cursorElement.classList.add('clicking');
       this.spawnSparks();
     }
+
+    const state = this.inputManager.getState();
+    const screenX = state.pointer.x * window.innerWidth;
+    const screenY = state.pointer.y * window.innerHeight;
+
+    const el = document.elementFromPoint(screenX, screenY);
+    if (el) {
+      const mouseInit: MouseEventInit = {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: screenX,
+        clientY: screenY,
+        button: 0,
+        buttons: 1
+      };
+
+      // Find clickable target (button, tile, or element itself)
+      const clickable = (el.closest('button, .oui-channel-tile, .oui-pill-btn, a, input, select, [role="button"]') || el) as HTMLElement;
+
+      clickable.dispatchEvent(new PointerEvent('pointerdown', mouseInit));
+      clickable.dispatchEvent(new MouseEvent('mousedown', mouseInit));
+      clickable.dispatchEvent(new PointerEvent('pointerup', mouseInit));
+      clickable.dispatchEvent(new MouseEvent('mouseup', mouseInit));
+      clickable.dispatchEvent(new MouseEvent('click', mouseInit));
+
+      // Trigger HTML click handler
+      if (typeof clickable.click === 'function') {
+        clickable.click();
+      }
+    }
   }
 
   private handleReleaseA(): void {
     if (this.cursorElement) {
       this.cursorElement.classList.remove('clicking');
+    }
+
+    const state = this.inputManager.getState();
+    const screenX = state.pointer.x * window.innerWidth;
+    const screenY = state.pointer.y * window.innerHeight;
+
+    const el = document.elementFromPoint(screenX, screenY);
+    if (el) {
+      const mouseInit: MouseEventInit = {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        clientX: screenX,
+        clientY: screenY,
+        button: 0,
+        buttons: 0
+      };
+      el.dispatchEvent(new PointerEvent('pointerup', mouseInit));
+      el.dispatchEvent(new MouseEvent('mouseup', mouseInit));
     }
   }
 
@@ -107,10 +158,25 @@ export class Cursor {
     // Position updates every frame at maximum display refresh rate
     this.cursorElement.style.transform = `translate3d(${screenX}px, ${screenY}px, 0) rotate(${rotationDeg}deg)`;
 
-    // Throttle document.elementFromPoint hit-testing to every 5 frames to eliminate synchronous browser layout recalcs
+    // Throttle document.elementFromPoint hit-testing to every 4 frames
     this.hoverFrameCounter++;
-    if (this.hoverFrameCounter % 5 === 0) {
+    if (this.hoverFrameCounter % 4 === 0) {
       const el = document.elementFromPoint(screenX, screenY);
+
+      // Manage channel tile hover state
+      const hoveredTile = el ? (el.closest('.oui-channel-tile') as HTMLElement | null) : null;
+      if (hoveredTile !== this.lastHoveredTile) {
+        if (this.lastHoveredTile) {
+          this.lastHoveredTile.classList.remove('hovered');
+          this.lastHoveredTile.dispatchEvent(new MouseEvent('mouseleave', { bubbles: false }));
+        }
+        if (hoveredTile) {
+          hoveredTile.classList.add('hovered');
+          hoveredTile.dispatchEvent(new MouseEvent('mouseenter', { bubbles: false }));
+        }
+        this.lastHoveredTile = hoveredTile;
+      }
+
       const isInteractive = Boolean(
         el && (
           el.tagName === 'BUTTON' ||
@@ -146,6 +212,11 @@ export class Cursor {
     if (this.unsubReleaseA) {
       this.unsubReleaseA();
       this.unsubReleaseA = undefined;
+    }
+
+    if (this.lastHoveredTile) {
+      this.lastHoveredTile.classList.remove('hovered');
+      this.lastHoveredTile = null;
     }
 
     document.body.classList.remove('oui-custom-cursor');

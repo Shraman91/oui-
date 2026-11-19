@@ -835,30 +835,57 @@
       secBanners.forEach(banner => {
         if (isSecure) {
           banner.className = 'security-status-banner secure';
-          banner.textContent = '🔒 HTTPS Secure: Motion & Gyroscope Sensors Ready';
+          banner.innerHTML = '🔒 HTTPS Secure: Gyroscope & Motion Sensors Active';
         } else {
           banner.className = 'security-status-banner insecure';
-          banner.textContent = '⚠️ HTTP Mode: Browser blocks motion sensors without HTTPS. Use Touch Aim pad below, or connect via HTTPS (:8443)!';
+          banner.innerHTML = `⚠️ HTTP Mode: Browser blocks motion sensors without HTTPS.<br><a href="https://${window.location.hostname}:8443/controller${window.location.search}" style="color:#b45309; text-decoration:underline; font-weight:900;">Tap to switch to HTTPS (:8443)</a> or use Touch Aim pad!`;
         }
       });
 
-      let motionStarted = false;
       let hasRealMotionEvents = false;
+      let hasAlphaHeading = false;
+      let lastMotionTime = 0;
 
       function attachSensors() {
-        if (motionStarted) return;
-        motionStarted = true;
         window.addEventListener('deviceorientation', handleOrientation, true);
         window.addEventListener('deviceorientationabsolute', handleOrientation, true);
         window.addEventListener('devicemotion', handleMotion, true);
 
-        // Live phone-side telemetry preview
-        setInterval(() => {
-          if (telMotion) {
-            telMotion.textContent = `Aim: ${sensorData.orientation.alpha.toFixed(0)}° / ${sensorData.orientation.beta.toFixed(0)}°`;
+        // Also bind to window object directly
+        window.ondeviceorientation = handleOrientation;
+        window.ondevicemotion = handleMotion;
+
+        // Modern Generic Sensor API fallback if available
+        if (typeof RelativeOrientationSensor !== 'undefined') {
+          try {
+            const relSensor = new RelativeOrientationSensor({ frequency: 60 });
+            relSensor.addEventListener('reading', () => {
+              if (relSensor.quaternion) {
+                const [x, y, z, w] = relSensor.quaternion;
+                const sinp = 2 * (w * y - z * x);
+                const pitch = Math.abs(sinp) >= 1 ? Math.sign(sinp) * 90 : Math.asin(sinp) * (180 / Math.PI);
+                const siny_cosp = 2 * (w * z + x * y);
+                const cosy_cosp = 1 - 2 * (y * y + z * z);
+                const yaw = Math.atan2(siny_cosp, cosy_cosp) * (180 / Math.PI);
+                sensorData.orientation.alpha = (yaw + 360) % 360;
+                sensorData.orientation.beta = pitch;
+                hasRealMotionEvents = true;
+                hasAlphaHeading = true;
+              }
+            });
+            relSensor.start();
+          } catch (e) {
+            // Ignore sensor init error
           }
-        }, 120);
+        }
       }
+
+      // Live phone-side telemetry preview
+      setInterval(() => {
+        if (telMotion) {
+          telMotion.textContent = `Aim: ${sensorData.orientation.alpha.toFixed(0)}° / ${sensorData.orientation.beta.toFixed(0)}°`;
+        }
+      }, 100);
 
       // Attach immediately at script start
       attachSensors();
@@ -889,9 +916,10 @@
       }
 
       function handleOrientation(event) {
-        if (event.alpha !== null && event.alpha !== undefined) {
+        if (event.alpha !== null && event.alpha !== undefined && event.alpha !== 0) {
           sensorData.orientation.alpha = event.alpha;
           hasRealMotionEvents = true;
+          hasAlphaHeading = true;
         }
         if (event.beta !== null && event.beta !== undefined) {
           sensorData.orientation.beta = event.beta;
@@ -900,14 +928,34 @@
         if (event.gamma !== null && event.gamma !== undefined) {
           sensorData.orientation.gamma = event.gamma;
           hasRealMotionEvents = true;
+          // If alpha heading is missing, tilt roll (gamma) guides horizontal aim
+          if (!hasAlphaHeading && !sensorData.orientation.alpha) {
+            sensorData.orientation.alpha = (event.gamma * 1.5 + 360) % 360;
+          }
         }
       }
 
       function handleMotion(event) {
+        const now = performance.now();
+        const dt = lastMotionTime > 0 ? (now - lastMotionTime) / 1000 : 0.016;
+        lastMotionTime = now;
+
         if (event.rotationRate) {
-          if (event.rotationRate.alpha !== null) sensorData.rotationRate.alpha = event.rotationRate.alpha;
-          if (event.rotationRate.beta !== null) sensorData.rotationRate.beta = event.rotationRate.beta;
-          if (event.rotationRate.gamma !== null) sensorData.rotationRate.gamma = event.rotationRate.gamma;
+          const rAlpha = event.rotationRate.alpha || 0;
+          const rBeta = event.rotationRate.beta || 0;
+          const rGamma = event.rotationRate.gamma || 0;
+          sensorData.rotationRate.alpha = rAlpha;
+          sensorData.rotationRate.beta = rBeta;
+          sensorData.rotationRate.gamma = rGamma;
+
+          // Gyroscope yaw integration if compass heading is unavailable
+          if (!hasAlphaHeading && dt < 0.1) {
+            const gyroRate = Math.abs(rAlpha) > Math.abs(rGamma) ? rAlpha : rGamma;
+            if (Math.abs(gyroRate) > 0.6) {
+              sensorData.orientation.alpha = (sensorData.orientation.alpha + gyroRate * dt + 360) % 360;
+              hasRealMotionEvents = true;
+            }
+          }
         }
 
         if (event.acceleration) {
