@@ -44,6 +44,7 @@ function handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse):
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Permissions-Policy', 'accelerometer=*, gyroscope=*, magnetometer=*');
+  res.setHeader('Feature-Policy', 'accelerometer *; gyroscope *; magnetometer *');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);

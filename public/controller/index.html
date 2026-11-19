@@ -253,6 +253,51 @@
       display: block;
     }
 
+    /* Sensor Diagnostics Box */
+    .sensor-diagnostics-box {
+      width: 100%;
+      background: #ffffff;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px;
+      font-size: 11px;
+      color: #334155;
+      margin-top: 8px;
+    }
+
+    .sensor-diagnostics-box summary {
+      font-weight: 800;
+      color: #be185d;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .diag-content {
+      margin-top: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .diag-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px dotted #e2e8f0;
+      padding-bottom: 2px;
+    }
+
+    .btn-diag-test {
+      margin-top: 6px;
+      background: #ec4899;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px;
+      font-weight: 800;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
     /* Touch Aiming Trackpad */
     .touch-aim-zone {
       width: 100%;
@@ -712,6 +757,19 @@
           <span>4</span>
         </div>
       </div>
+
+      <details class="sensor-diagnostics-box" id="sensorDiagBox">
+        <summary>🔍 Sensor Diagnostics & Permissions</summary>
+        <div class="diag-content">
+          <div class="diag-row"><span>HTTPS Secure:</span> <strong id="diagSecure">--</strong></div>
+          <div class="diag-row"><span>Orientation Events:</span> <strong id="diagOrientCount">0</strong></div>
+          <div class="diag-row"><span>Motion (Gyro) Events:</span> <strong id="diagMotionCount">0</strong></div>
+          <div class="diag-row"><span>Raw Alpha (Yaw):</span> <strong id="diagAlpha">0°</strong></div>
+          <div class="diag-row"><span>Raw Beta (Pitch):</span> <strong id="diagBeta">0°</strong></div>
+          <div class="diag-row"><span>Raw Gamma (Roll):</span> <strong id="diagGamma">0°</strong></div>
+          <button type="button" class="btn-diag-test" id="btnRequestSensorPerm">Request / Unlock Motion Sensors</button>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -845,15 +903,26 @@
       let hasRealMotionEvents = false;
       let hasAlphaHeading = false;
       let lastMotionTime = 0;
+      let orientEventCount = 0;
+      let motionEventCount = 0;
+
+      // Diagnostic DOM elements
+      const diagSecureEl = document.getElementById('diagSecure');
+      const diagOrientCountEl = document.getElementById('diagOrientCount');
+      const diagMotionCountEl = document.getElementById('diagMotionCount');
+      const diagAlphaEl = document.getElementById('diagAlpha');
+      const diagBetaEl = document.getElementById('diagBeta');
+      const diagGammaEl = document.getElementById('diagGamma');
+      const btnRequestSensorPerm = document.getElementById('btnRequestSensorPerm');
 
       function attachSensors() {
-        window.addEventListener('deviceorientation', handleOrientation, true);
-        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-        window.addEventListener('devicemotion', handleMotion, true);
-
-        // Also bind to window object directly
-        window.ondeviceorientation = handleOrientation;
-        window.ondevicemotion = handleMotion;
+        try {
+          window.addEventListener('deviceorientation', handleOrientation, { passive: true });
+          window.addEventListener('deviceorientationabsolute', handleOrientation, { passive: true });
+          window.addEventListener('devicemotion', handleMotion, { passive: true });
+        } catch (e) {
+          console.warn('addEventListener error:', e);
+        }
 
         // Modern Generic Sensor API fallback if available
         if (typeof RelativeOrientationSensor !== 'undefined') {
@@ -871,6 +940,7 @@
                 sensorData.orientation.beta = pitch;
                 hasRealMotionEvents = true;
                 hasAlphaHeading = true;
+                orientEventCount++;
               }
             });
             relSensor.start();
@@ -880,62 +950,106 @@
         }
       }
 
-      // Live phone-side telemetry preview
+      // Live phone-side telemetry preview & diagnostics updater
       setInterval(() => {
         if (telMotion) {
           telMotion.textContent = `Aim: ${sensorData.orientation.alpha.toFixed(0)}° / ${sensorData.orientation.beta.toFixed(0)}°`;
         }
+
+        // Update Diagnostics panel
+        if (diagSecureEl) {
+          diagSecureEl.textContent = isSecure ? 'YES (Secure)' : 'NO (HTTP - Motion Blocked!)';
+          diagSecureEl.style.color = isSecure ? '#16a34a' : '#dc2626';
+        }
+        if (diagOrientCountEl) {
+          diagOrientCountEl.textContent = `${orientEventCount} events`;
+          diagOrientCountEl.style.color = orientEventCount > 0 ? '#16a34a' : '#ea580c';
+        }
+        if (diagMotionCountEl) {
+          diagMotionCountEl.textContent = `${motionEventCount} events`;
+          diagMotionCountEl.style.color = motionEventCount > 0 ? '#16a34a' : '#ea580c';
+        }
+        if (diagAlphaEl) diagAlphaEl.textContent = `${sensorData.orientation.alpha.toFixed(1)}°`;
+        if (diagBetaEl) diagBetaEl.textContent = `${sensorData.orientation.beta.toFixed(1)}°`;
+        if (diagGammaEl) diagGammaEl.textContent = `${sensorData.orientation.gamma.toFixed(1)}°`;
       }, 100);
 
       // Attach immediately at script start
       attachSensors();
 
-      function requestMotionPermissions() {
-        // iOS 13+ permission request (must be initiated directly in user click/touch gesture)
+      async function requestMotionPermissions() {
+        let requested = false;
+        let granted = false;
+
+        // iOS 13+ DeviceOrientationEvent permission request
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          DeviceOrientationEvent.requestPermission()
-            .then(perm => {
-              if (perm === 'granted') {
-                attachSensors();
-              }
-            })
-            .catch(e => console.warn('DeviceOrientation perm err:', e));
+          requested = true;
+          try {
+            const perm = await DeviceOrientationEvent.requestPermission();
+            if (perm === 'granted') {
+              granted = true;
+            } else {
+              alert(`Motion Permission was: ${perm}.\n\nPlease check iPhone Settings > Safari > Motion & Orientation Access (Turn ON), or tap "aA" in Safari address bar -> Website Settings -> Motion.`);
+            }
+          } catch (e) {
+            console.warn('DeviceOrientation perm err:', e);
+            alert(`Motion sensor notice: ${e.message || e}\n\nNote: Safari requires HTTPS to access motion sensors.`);
+          }
         }
 
+        // iOS 13+ DeviceMotionEvent permission request
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-          DeviceMotionEvent.requestPermission()
-            .then(perm => {
-              if (perm === 'granted') {
-                attachSensors();
-              }
-            })
-            .catch(e => console.warn('DeviceMotion perm err:', e));
+          try {
+            await DeviceMotionEvent.requestPermission();
+          } catch (e) {
+            // Already handled or ignored
+          }
         }
 
         attachSensors();
+
+        if (!requested) {
+          if (!isSecure) {
+            alert('⚠️ HTTP Mode Detected!\n\nMobile browsers (Chrome & Safari) disable gyroscope sensors on unencrypted HTTP.\n\nPlease open the HTTPS link (:8443) and accept the self-signed certificate (Advanced > Proceed).');
+          } else {
+            alert('Sensors initialized! If events remain 0:\n1. Ensure "Auto-rotate" is ON in phone settings.\n2. In Chrome, check Site Settings > Motion sensors > Allowed.');
+          }
+        }
+      }
+
+      if (btnRequestSensorPerm) {
+        btnRequestSensorPerm.addEventListener('click', async () => {
+          btnRequestSensorPerm.disabled = true;
+          btnRequestSensorPerm.textContent = 'Requesting...';
+          await requestMotionPermissions();
+          btnRequestSensorPerm.disabled = false;
+          btnRequestSensorPerm.textContent = 'Request / Unlock Motion Sensors';
+        });
       }
 
       function handleOrientation(event) {
-        if (event.alpha !== null && event.alpha !== undefined && event.alpha !== 0) {
+        orientEventCount++;
+        if (typeof event.alpha === 'number' && !isNaN(event.alpha)) {
           sensorData.orientation.alpha = event.alpha;
           hasRealMotionEvents = true;
           hasAlphaHeading = true;
         }
-        if (event.beta !== null && event.beta !== undefined) {
+        if (typeof event.beta === 'number' && !isNaN(event.beta)) {
           sensorData.orientation.beta = event.beta;
           hasRealMotionEvents = true;
         }
-        if (event.gamma !== null && event.gamma !== undefined) {
+        if (typeof event.gamma === 'number' && !isNaN(event.gamma)) {
           sensorData.orientation.gamma = event.gamma;
           hasRealMotionEvents = true;
           // If alpha heading is missing, tilt roll (gamma) guides horizontal aim
-          if (!hasAlphaHeading && !sensorData.orientation.alpha) {
+          if (!hasAlphaHeading) {
             sensorData.orientation.alpha = (event.gamma * 1.5 + 360) % 360;
           }
         }
       }
 
       function handleMotion(event) {
+        motionEventCount++;
         const now = performance.now();
         const dt = lastMotionTime > 0 ? (now - lastMotionTime) / 1000 : 0.016;
         lastMotionTime = now;
@@ -951,7 +1065,7 @@
           // Gyroscope yaw integration if compass heading is unavailable
           if (!hasAlphaHeading && dt < 0.1) {
             const gyroRate = Math.abs(rAlpha) > Math.abs(rGamma) ? rAlpha : rGamma;
-            if (Math.abs(gyroRate) > 0.6) {
+            if (Math.abs(gyroRate) > 0.4) {
               sensorData.orientation.alpha = (sensorData.orientation.alpha + gyroRate * dt + 360) % 360;
               hasRealMotionEvents = true;
             }
