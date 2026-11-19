@@ -1,6 +1,8 @@
 import { InputManager } from '../input/InputManager';
 import { MouseProvider } from '../input/providers/MouseProvider';
 import { Cursor } from '../input/Cursor';
+import { RelayClient } from '../input/network/RelayClient';
+import { PairingModal } from '../menu/PairingModal';
 import { SceneManager } from './SceneManager';
 import { Menu, CHANNELS } from '../menu/Menu';
 import { BootSplash } from '../menu/BootSplash';
@@ -16,6 +18,8 @@ class OuiConsoleApp {
   private inputManager: InputManager;
   private mouseProvider: MouseProvider;
   private cursor: Cursor;
+  private relayClient: RelayClient;
+  private pairingModal: PairingModal;
   private sceneManager: SceneManager;
   private settingsOverlay: SettingsOverlay;
   private menu: Menu | null = null;
@@ -40,23 +44,31 @@ class OuiConsoleApp {
     });
     this.cursor.mount();
 
-    // 3. Initialize Settings & Telemetry Overlay (Tab key / Wii Options button)
+    // 3. Initialize Relay Client & Pairing Modal
+    this.relayClient = new RelayClient({ autoConnect: true });
+    this.pairingModal = new PairingModal({
+      container: this.appElement,
+      relayClient: this.relayClient
+    });
+
+    // 4. Initialize Settings & Telemetry Overlay (Tab key / Wii Options button)
     this.settingsOverlay = new SettingsOverlay({
       container: this.appElement,
       inputManager: this.inputManager,
       onProviderChange: () => {
         this.menu?.updateProviderBadge();
-      }
+      },
+      onOpenPairing: () => this.pairingModal.open()
     });
 
-    // 4. Initialize Scene Manager
+    // 5. Initialize Scene Manager
     this.sceneManager = new SceneManager({
       container: this.appElement,
       inputManager: this.inputManager,
       onReturnToMenu: () => this.showMenu()
     });
 
-    // 5. Play Boot Splash before showing menu
+    // 6. Play Boot Splash before showing menu
     this.playBootSplash();
   }
 
@@ -81,7 +93,8 @@ class OuiConsoleApp {
       container: this.sceneManager.getSceneContainer(),
       inputManager: this.inputManager,
       onSelectChannel: (channelId: string) => this.handleChannelSelect(channelId),
-      onOpenSettings: () => this.settingsOverlay.open()
+      onOpenSettings: () => this.settingsOverlay.open(),
+      onOpenPairing: () => this.pairingModal.open()
     });
 
     this.menu.mount();

@@ -6,12 +6,14 @@ export interface SettingsOverlayOptions {
   container: HTMLElement;
   inputManager: InputManager;
   onProviderChange?: (providerId: string) => void;
+  onOpenPairing?: () => void;
 }
 
 export class SettingsOverlay {
   private container: HTMLElement;
   private inputManager: InputManager;
   private onProviderChange?: (providerId: string) => void;
+  private onOpenPairing?: () => void;
 
   private backdropElement: HTMLElement | null = null;
   private isOpen = false;
@@ -22,6 +24,7 @@ export class SettingsOverlay {
     this.container = options.container;
     this.inputManager = options.inputManager;
     this.onProviderChange = options.onProviderChange;
+    this.onOpenPairing = options.onOpenPairing;
 
     this.inputManager.on('swing', (payload) => {
       this.lastSwingInfo = `${payload.speed.toFixed(1)} u/s (${payload.direction.x.toFixed(2)}, ${payload.direction.y.toFixed(2)})`;
@@ -87,6 +90,15 @@ export class SettingsOverlay {
           </div>
 
           <div>
+            <div class="oui-settings-section-title">[ Wii Remote & Phone Pairing ]</div>
+            <div style="margin-top: 0.6rem;">
+              <button class="oui-pill-btn" id="oui-settings-open-pairing-btn" style="width: 100%; padding: 0.75rem 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                <span class="oui-btn-icon">${PIXEL_ICONS.wiiRemote}</span> Pair Phone as Wii Remote (QR Code)
+              </button>
+            </div>
+          </div>
+
+          <div>
             <div class="oui-settings-section-title">[ Controller Telemetry ]</div>
             <div class="oui-telemetry-grid">
               <div class="oui-telemetry-item">
@@ -123,6 +135,12 @@ export class SettingsOverlay {
     const doneBtn = this.backdropElement.querySelector('#oui-settings-done-btn');
     closeBtn?.addEventListener('click', () => this.close());
     doneBtn?.addEventListener('click', () => this.close());
+
+    const pairBtn = this.backdropElement.querySelector('#oui-settings-open-pairing-btn');
+    pairBtn?.addEventListener('click', () => {
+      this.close();
+      this.onOpenPairing?.();
+    });
 
     const items = this.backdropElement.querySelectorAll('.oui-provider-item');
     for (const item of items) {

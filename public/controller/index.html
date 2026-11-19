@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#fdf2f8">
+  <title>oui^^ Wii Remote</title>
+  <style>
+    :root {
+      --bg: #f8f5f6;
+      --card-bg: #ffffff;
+      --pink-primary: #f472b6;
+      --pink-soft: #fce7f3;
+      --pink-hover: #ec4899;
+      --text-dark: #382c33;
+      --text-muted: #8b7582;
+      --border: #f3d7e5;
+      --active-cyan: #38bdf8;
+      --success: #34d399;
+      --shadow: 0 10px 25px -5px rgba(244, 114, 182, 0.2), 0 8px 10px -6px rgba(56, 44, 51, 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-dark);
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      overflow-x: hidden;
+    }
+
+    .remote-shell {
+      width: 100%;
+      max-width: 340px;
+      background: var(--card-bg);
+      border-radius: 40px;
+      border: 3px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 24px 20px 28px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    /* Top IR sensor emitter window */
+    .remote-ir-window {
+      width: 48px;
+      height: 7px;
+      background: #4a3b44;
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .brand-title {
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .brand-title span.accent {
+      color: var(--pink-primary);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    .status-card {
+      width: 100%;
+      background: var(--pink-soft);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .status-indicator {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      transition: background 0.3s ease;
+    }
+
+    .status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.7);
+    }
+
+    .status-dot.connecting {
+      background: #fbbf24;
+      animation: pulse 1s infinite alternate;
+    }
+
+    .status-dot.error {
+      background: #f87171;
+    }
+
+    @keyframes pulse {
+      from { opacity: 0.4; }
+      to { opacity: 1; }
+    }
+
+    .ping-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .room-input-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .room-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+    }
+
+    .room-input {
+      width: 100%;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: 6px;
+      text-transform: uppercase;
+      color: var(--text-dark);
+      background: #faf7f8;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .room-input:focus {
+      border-color: var(--pink-primary);
+      background: #ffffff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      background: var(--pink-primary);
+      color: #ffffff;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(244, 114, 182, 0.4);
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary:active {
+      transform: scale(0.97);
+      background: var(--pink-hover);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .test-actions-group {
+      width: 100%;
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-sub {
+      flex: 1;
+      background: #f1f5f9;
+      color: var(--text-dark);
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    .btn-sub:active {
+      background: #e2e8f0;
+    }
+
+    /* Player indicator LEDs at the bottom */
+    .player-leds-container {
+      margin-top: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .player-leds {
+      display: flex;
+      gap: 14px;
+    }
+
+    .led-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      border: 1px solid #cbd5e1;
+      transition: all 0.3s ease;
+    }
+
+    .led-dot.active {
+      background: var(--active-cyan);
+      border-color: #0284c7;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+    }
+
+    .led-labels {
+      display: flex;
+      gap: 14px;
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .led-labels span {
+      width: 12px;
+      text-align: center;
+    }
+
+    .footer-note {
+      margin-top: 20px;
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="remote-shell">
+    <div class="remote-ir-window"></div>
+    <div class="brand-title">oui<span class="accent">^^</span></div>
+    <div class="brand-subtitle">Wii Remote Controller</div>
+
+    <div class="status-card">
+      <div class="status-indicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Disconnected</span>
+      </div>
+      <div class="ping-text" id="pingText">Ping: -- ms</div>
+    </div>
+
+    <div class="room-input-group">
+      <label class="room-label" for="roomInput">Console Room Code</label>
+      <input type="text" id="roomInput" class="room-input" maxlength="4" placeholder="----" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
+    </div>
+
+    <button id="connectBtn" class="btn-primary">Connect to Console</button>
+
+    <div class="test-actions-group" id="testActions" style="display: none;">
+      <button id="testRecenterBtn" class="btn-sub">🎯 Recenter</button>
+      <button id="testButtonABtn" class="btn-sub">🅰️ Press A</button>
+    </div>
+
+    <div class="player-leds-container">
+      <div class="player-leds">
+        <div class="led-dot" id="led1"></div>
+        <div class="led-dot" id="led2"></div>
+        <div class="led-dot" id="led3"></div>
+        <div class="led-dot" id="led4"></div>
+      </div>
+      <div class="led-labels">
+        <span>1</span>
+        <span>2</span>
+        <span>3</span>
+        <span>4</span>
+      </div>
+    </div>
+
+    <p class="footer-note">
+      Pairing established via WebSocket relay. Step 2 will render the full Wii Remote motion sensors & physical buttons.
+    </p>
+  </div>
+
+  <script>
+    (function () {
+      const urlParams = new URLSearchParams(window.location.search);
+      const prefilledRoom = urlParams.get('room') || '';
+      
+      const roomInput = document.getElementById('roomInput');
+      const connectBtn = document.getElementById('connectBtn');
+      const statusDot = document.getElementById('statusDot');
+      const statusText = document.getElementById('statusText');
+      const pingText = document.getElementById('pingText');
+      const testActions = document.getElementById('testActions');
+      const testRecenterBtn = document.getElementById('testRecenterBtn');
+      const testButtonABtn = document.getElementById('testButtonABtn');
+
+      if (prefilledRoom) {
+        roomInput.value = prefilledRoom.toUpperCase();
+      }
+
+      let socket = null;
+      let pingInterval = null;
+      let lastPingTime = 0;
+      let remoteId = null;
+
+      function updateStatus(state, message) {
+        statusDot.className = 'status-dot ' + state;
+        statusText.textContent = message;
+      }
+
+      function updateLeds(assignedId) {
+        document.getElementById('led1').classList.toggle('active', assignedId === 1);
+        document.getElementById('led2').classList.toggle('active', assignedId === 2);
+        document.getElementById('led3').classList.toggle('active', assignedId === 3);
+        document.getElementById('led4').classList.toggle('active', assignedId === 4);
+      }
+
+      function connectToRelay() {
+        const roomCode = roomInput.value.trim().toUpperCase();
+        if (!roomCode || roomCode.length < 4) {
+          alert('Please enter a valid 4-character room code');
+          return;
+        }
+
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.close();
+        }
+
+        updateStatus('connecting', 'Connecting to relay...');
+        connectBtn.disabled = true;
+
+        // Connect via WSS / WS matching current page protocol
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProtocol}//${window.location.host}/ws`;
+
+        try {
+          socket = new WebSocket(wsUrl);
+        } catch (e) {
+          updateStatus('error', 'Failed to initialize WS');
+          connectBtn.disabled = false;
+          return;
+        }
+
+        socket.onopen = () => {
+          updateStatus('connecting', 'Joining room ' + roomCode + '...');
+          // Send join_room
+          const joinMsg = {
+            type: 'join_room',
+            roomCode: roomCode
+          };
+          socket.send(JSON.stringify(joinMsg));
+
+          // Start ping
+          pingInterval = setInterval(() => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+              lastPingTime = performance.now();
+              socket.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 3000);
+        };
+
+        socket.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.type === 'joined') {
+              remoteId = data.remoteId;
+              updateStatus('connected', `Connected as Remote ${remoteId}`);
+              updateLeds(remoteId);
+              connectBtn.textContent = 'Connected';
+              connectBtn.disabled = true;
+              testActions.style.display = 'flex';
+            } else if (data.type === 'pong') {
+              const rtt = Math.round(performance.now() - lastPingTime);
+              pingText.textContent = `Ping: ${rtt} ms`;
+            } else if (data.type === 'rumble') {
+              if (navigator.vibrate) {
+                navigator.vibrate(data.payload?.duration || 100);
+              }
+            } else if (data.type === 'error') {
+              updateStatus('error', data.message || 'Error occurred');
+              connectBtn.disabled = false;
+            }
+          } catch (e) {
+            console.error('Failed to parse msg', e);
+          }
+        };
+
+        socket.onclose = () => {
+          updateStatus('error', 'Disconnected from relay');
+          connectBtn.disabled = false;
+          connectBtn.textContent = 'Reconnect';
+          testActions.style.display = 'none';
+          updateLeds(null);
+          if (pingInterval) clearInterval(pingInterval);
+        };
+
+        socket.onerror = (err) => {
+          console.error('WS error', err);
+          updateStatus('error', 'Connection error');
+          connectBtn.disabled = false;
+        };
+      }
+
+      connectBtn.addEventListener('click', connectToRelay);
+
+      // Auto-connect if query param has room
+      if (prefilledRoom.length === 4) {
+        setTimeout(connectToRelay, 300);
+      }
+
+      // Test actions for Step 1 verification
+      testRecenterBtn.addEventListener('click', () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: 'recenter' }));
+          if (navigator.vibrate) navigator.vibrate(50);
+        }
+      });
+
+      testButtonABtn.addEventListener('pointerdown', () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'button_event',
+            payload: { button: 'A', state: 'down' }
+          }));
+          if (navigator.vibrate) navigator.vibrate(30);
+        }
+      });
+
+      testButtonABtn.addEventListener('pointerup', () => {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({
+            type: 'button_event',
+            payload: { button: 'A', state: 'up' }
+          }));
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

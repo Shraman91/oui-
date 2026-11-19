@@ -51,6 +51,7 @@ export interface MenuOptions {
   inputManager: InputManager;
   onSelectChannel: (channelId: string, tileEl?: HTMLElement) => void;
   onOpenSettings?: () => void;
+  onOpenPairing?: () => void;
 }
 
 export class Menu {
@@ -58,6 +59,7 @@ export class Menu {
   private inputManager: InputManager;
   private onSelectChannel: (channelId: string, tileEl?: HTMLElement) => void;
   private onOpenSettings?: () => void;
+  private onOpenPairing?: () => void;
 
   private rootElement: HTMLElement | null = null;
   private clockInterval: number | null = null;
@@ -72,6 +74,7 @@ export class Menu {
     this.inputManager = options.inputManager;
     this.onSelectChannel = options.onSelectChannel;
     this.onOpenSettings = options.onOpenSettings;
+    this.onOpenPairing = options.onOpenPairing;
   }
 
   public mount(): void {
@@ -101,6 +104,9 @@ export class Menu {
         </svg>
       </div>
       <div class="oui-header-status">
+        <button class="oui-pill-btn oui-header-pair-btn" id="oui-btn-pair-remote" title="Pair Phone as Wii Remote">
+          <span class="oui-btn-icon">${PIXEL_ICONS.wiiRemote}</span> Pair Remote
+        </button>
         <div class="oui-provider-badge" id="oui-header-provider-badge" title="Controller Settings (Tab)">
           <span class="oui-provider-dot"></span>
           <span id="oui-active-provider-name">Mouse & Keyboard</span>
@@ -108,6 +114,11 @@ export class Menu {
         </div>
       </div>
     `;
+
+    const pairBtn = header.querySelector('#oui-btn-pair-remote');
+    pairBtn?.addEventListener('click', () => {
+      this.onOpenPairing?.();
+    });
 
     const badge = header.querySelector('#oui-header-provider-badge');
     badge?.addEventListener('click', () => {

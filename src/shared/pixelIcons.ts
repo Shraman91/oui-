@@ -206,5 +206,38 @@ export const PIXEL_ICONS = {
       <rect x="2" y="16" width="1" height="2" fill="#3b1d28"/>
       <rect x="11" y="16" width="1" height="2" fill="#3b1d28"/>
     </svg>
+  `,
+
+  // 9. Pixel Wii Remote
+  wiiRemote: `
+    <svg viewBox="0 0 16 20" width="20" height="25" shape-rendering="crispEdges">
+      <!-- Outer Border -->
+      <rect x="4" y="1" width="8" height="1" fill="#3b1d28"/>
+      <rect x="4" y="18" width="8" height="1" fill="#3b1d28"/>
+      <rect x="3" y="2" width="1" height="16" fill="#3b1d28"/>
+      <rect x="12" y="2" width="1" height="16" fill="#3b1d28"/>
+      <!-- Body Shell -->
+      <rect x="4" y="2" width="8" height="16" fill="#ffffff"/>
+      <!-- IR Sensor Tip -->
+      <rect x="6" y="2" width="4" height="1" fill="#3b1d28"/>
+      <!-- D-Pad (Pink) -->
+      <rect x="7" y="4" width="2" height="3" fill="#f472b6"/>
+      <rect x="6" y="5" width="4" height="1" fill="#f472b6"/>
+      <!-- Big A Button -->
+      <rect x="6" y="8" width="4" height="3" fill="#fce7f3"/>
+      <rect x="7" y="9" width="2" height="1" fill="#ec4899"/>
+      <!-- Minus / Home / Plus -->
+      <rect x="5" y="12" width="1" height="1" fill="#cbd5e1"/>
+      <rect x="7" y="12" width="2" height="1" fill="#38bdf8"/>
+      <rect x="10" y="12" width="1" height="1" fill="#cbd5e1"/>
+      <!-- 1 and 2 buttons -->
+      <rect x="7" y="14" width="2" height="1" fill="#cbd5e1"/>
+      <rect x="7" y="15" width="2" height="1" fill="#cbd5e1"/>
+      <!-- 4 LED dots -->
+      <rect x="5" y="17" width="1" height="1" fill="#38bdf8"/>
+      <rect x="7" y="17" width="1" height="1" fill="#94a3b8"/>
+      <rect x="8" y="17" width="1" height="1" fill="#94a3b8"/>
+      <rect x="10" y="17" width="1" height="1" fill="#94a3b8"/>
+    </svg>
   `
 } as const;
