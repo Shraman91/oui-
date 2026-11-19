@@ -9,6 +9,8 @@ import {
 export interface RelayClientOptions {
   host?: string;
   port?: number;
+  httpPort?: number;
+  httpsPort?: number;
   autoConnect?: boolean;
 }
 
@@ -23,7 +25,8 @@ export type ErrorCallback = (error: string) => void;
 export class RelayClient {
   private socket: WebSocket | null = null;
   private host: string;
-  private port: number;
+  private httpPort: number;
+  private httpsPort: number;
   private reconnectTimer: number | null = null;
   private pingInterval: number | null = null;
   private lastPingSentAt = 0;
@@ -47,7 +50,8 @@ export class RelayClient {
   constructor(options: RelayClientOptions = {}) {
     const loc = typeof window !== 'undefined' ? window.location : null;
     this.host = options.host || (loc ? loc.hostname : 'localhost') || 'localhost';
-    this.port = options.port || 8443;
+    this.httpPort = options.httpPort || 8080;
+    this.httpsPort = options.httpsPort || 8443;
 
     if (options.autoConnect) {
       this.connect();
@@ -60,8 +64,10 @@ export class RelayClient {
     }
 
     this.isExplicitlyClosed = false;
-    const protocol = typeof window !== 'undefined' && window.location.protocol === 'http:' ? 'ws:' : 'wss:';
-    const wsUrl = `${protocol}//${this.host}:${this.port}/ws`;
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const protocol = isHttps ? 'wss:' : 'ws:';
+    const port = isHttps ? this.httpsPort : this.httpPort;
+    const wsUrl = `${protocol}//${this.host}:${port}/ws`;
 
     try {
       this.socket = new WebSocket(wsUrl);
@@ -119,8 +125,12 @@ export class RelayClient {
     return this.lanIp;
   }
 
-  public getPort(): number {
-    return this.port;
+  public getHttpPort(): number {
+    return this.httpPort;
+  }
+
+  public getHttpsPort(): number {
+    return this.httpsPort;
   }
 
   public getLatency(): number {
@@ -135,11 +145,13 @@ export class RelayClient {
     return Array.from(this.connectedRemotes);
   }
 
-  public getControllerUrl(): string | null {
+  public getControllerUrl(preferHttps = true): string | null {
     if (!this.roomCode) return null;
     const targetHost = this.lanIp || this.host;
-    // Mobile requires HTTPS to access motion sensors
-    return `https://${targetHost}:${this.port}/controller/?room=${this.roomCode}`;
+    if (preferHttps) {
+      return `https://${targetHost}:${this.httpsPort}/controller/?room=${this.roomCode}`;
+    }
+    return `http://${targetHost}:${this.httpPort}/controller/?room=${this.roomCode}`;
   }
 
   public sendRumble(remoteId: 1 | 2, payload: RumblePayload): void {
@@ -220,7 +232,8 @@ export class RelayClient {
           if (msg.roomCode) {
             this.roomCode = msg.roomCode;
             if (msg.lanIp) this.lanIp = msg.lanIp;
-            if (msg.port) this.port = msg.port;
+            if (msg.httpPort) this.httpPort = msg.httpPort;
+            if (msg.httpsPort) this.httpsPort = msg.httpsPort;
             const url = this.getControllerUrl();
             if (url) {
               for (const listener of this.roomCreatedListeners) {

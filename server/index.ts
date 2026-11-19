@@ -14,7 +14,8 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const publicDir = path.join(rootDir, 'public');
 
-const PORT = Number.parseInt(process.env.PORT || '8443', 10);
+const HTTP_PORT = Number.parseInt(process.env.HTTP_PORT || '8080', 10);
+const HTTPS_PORT = Number.parseInt(process.env.PORT || '8443', 10);
 
 /**
  * Resolves local primary LAN IPv4 address (e.g. 192.168.1.x)
@@ -36,7 +37,7 @@ export function getLocalLanIp(): string {
 const lanIp = getLocalLanIp();
 const roomManager = new RoomManager();
 
-// 1. Static HTTP Request Handler
+// 1. Static HTTP/HTTPS Request Handler
 function handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse): void {
   // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -49,7 +50,8 @@ function handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse):
     return;
   }
 
-  const parsedUrl = new URL(req.url || '/', `https://${req.headers.host || 'localhost'}`);
+  const hostHeader = req.headers.host || 'localhost';
+  const parsedUrl = new URL(req.url || '/', `http://${hostHeader}`);
   let pathname = parsedUrl.pathname;
 
   // Route /controller to /controller/index.html
@@ -71,7 +73,15 @@ function handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse):
       // Health check fallback
       if (pathname === '/health' || pathname === '/') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', service: 'oui-relay-server', lanIp, port: PORT }));
+        res.end(
+          JSON.stringify({
+            status: 'ok',
+            service: 'oui-relay-server',
+            lanIp,
+            httpPort: HTTP_PORT,
+            httpsPort: HTTPS_PORT
+          })
+        );
         return;
       }
       res.writeHead(404, { 'Content-Type': 'text/plain' });
@@ -97,136 +107,158 @@ function handleHttpRequest(req: http.IncomingMessage, res: http.ServerResponse):
 
 // 2. Load SSL certificates for HTTPS (Required for phone motion sensors)
 const certs = loadSslCerts();
-let server: https.Server | http.Server;
+
+// Plain HTTP Server (Port 8080) - Ideal for console WebSocket on http://localhost:5173
+const httpServer = http.createServer(handleHttpRequest);
+const wssHttp = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+// HTTPS Server (Port 8443) - For phone motion sensors (iOS Safari / Android Chrome)
+let httpsServer: https.Server | null = null;
+let wssHttps: WebSocketServer | null = null;
 
 if (certs) {
-  server = https.createServer({ key: certs.key, cert: certs.cert }, handleHttpRequest);
+  httpsServer = https.createServer({ key: certs.key, cert: certs.cert }, handleHttpRequest);
+  wssHttps = new WebSocketServer({ server: httpsServer, path: '/ws' });
 } else {
-  console.warn('[oui-relay] No certs/cert.pem found. Starting plain HTTP (sensors may be blocked on mobile).');
-  server = http.createServer(handleHttpRequest);
+  console.warn('[oui-relay] No certs found in certs/. Running HTTP only.');
 }
 
-// 3. Attach WebSocket Server
-const wss = new WebSocketServer({ server, path: '/ws' });
+// 3. Shared WebSocket connection logic
+function setupWebSocketHandler(wss: WebSocketServer): void {
+  wss.on('connection', (ws: WebSocket) => {
+    ws.on('message', (data: string) => {
+      try {
+        const msg: ClientMessage = JSON.parse(data.toString());
 
-wss.on('connection', (ws: WebSocket) => {
-  ws.on('message', (data: string) => {
-    try {
-      const msg: ClientMessage = JSON.parse(data.toString());
-
-      switch (msg.type) {
-        case 'create_room': {
-          const room = roomManager.createRoom(ws);
-          const reply: ServerMessage = {
-            type: 'room_created',
-            roomCode: room.code,
-            lanIp,
-            port: PORT
-          };
-          ws.send(JSON.stringify(reply));
-          break;
-        }
-
-        case 'join_room': {
-          if (!msg.roomCode) {
-            ws.send(JSON.stringify({ type: 'error', message: 'Room code required' }));
-            return;
-          }
-          const result = roomManager.joinRoom(msg.roomCode, ws);
-          if (!result) {
-            ws.send(JSON.stringify({ type: 'error', message: 'Invalid or full room' }));
-            return;
-          }
-
-          // Reply to phone remote
-          const joinedMsg: ServerMessage = {
-            type: 'joined',
-            remoteId: result.remoteId,
-            roomCode: result.room.code
-          };
-          ws.send(JSON.stringify(joinedMsg));
-
-          // Notify console
-          const notifyConsole: ServerMessage = {
-            type: 'remote_connected',
-            remoteId: result.remoteId,
-            roomCode: result.room.code
-          };
-          result.room.consoleSocket?.send(JSON.stringify(notifyConsole));
-          break;
-        }
-
-        case 'sensor_data':
-        case 'button_event':
-        case 'recenter': {
-          const info = roomManager.getSocketInfo(ws);
-          if (!info || info.role !== 'remote') return;
-          const room = roomManager.getRoom(info.roomCode);
-          if (room && room.consoleSocket && room.consoleSocket.readyState === WebSocket.OPEN) {
-            const forward: ServerMessage = {
-              type: msg.type,
-              remoteId: info.remoteId,
-              payload: msg.payload
+        switch (msg.type) {
+          case 'create_room': {
+            const room = roomManager.createRoom(ws);
+            const reply: ServerMessage = {
+              type: 'room_created',
+              roomCode: room.code,
+              lanIp,
+              port: HTTPS_PORT,
+              httpPort: HTTP_PORT,
+              httpsPort: HTTPS_PORT
             };
-            room.consoleSocket.send(JSON.stringify(forward));
+            ws.send(JSON.stringify(reply));
+            break;
           }
-          break;
-        }
 
-        case 'rumble': {
-          // Console requests rumble on phone
-          const info = roomManager.getSocketInfo(ws);
-          if (!info || info.role !== 'console') return;
-          const room = roomManager.getRoom(info.roomCode);
-          if (room && msg.remoteId) {
-            const target = room.remotes.get(msg.remoteId);
-            if (target && target.readyState === WebSocket.OPEN) {
+          case 'join_room': {
+            if (!msg.roomCode) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Room code required' }));
+              return;
+            }
+            const result = roomManager.joinRoom(msg.roomCode, ws);
+            if (!result) {
+              ws.send(JSON.stringify({ type: 'error', message: 'Invalid or full room' }));
+              return;
+            }
+
+            // Reply to phone remote
+            const joinedMsg: ServerMessage = {
+              type: 'joined',
+              remoteId: result.remoteId,
+              roomCode: result.room.code
+            };
+            ws.send(JSON.stringify(joinedMsg));
+
+            // Notify console
+            const notifyConsole: ServerMessage = {
+              type: 'remote_connected',
+              remoteId: result.remoteId,
+              roomCode: result.room.code
+            };
+            result.room.consoleSocket?.send(JSON.stringify(notifyConsole));
+            break;
+          }
+
+          case 'sensor_data':
+          case 'button_event':
+          case 'recenter': {
+            const info = roomManager.getSocketInfo(ws);
+            if (!info || info.role !== 'remote') return;
+            const room = roomManager.getRoom(info.roomCode);
+            if (room && room.consoleSocket && room.consoleSocket.readyState === WebSocket.OPEN) {
               const forward: ServerMessage = {
-                type: 'rumble',
+                type: msg.type,
+                remoteId: info.remoteId,
                 payload: msg.payload
               };
-              target.send(JSON.stringify(forward));
+              room.consoleSocket.send(JSON.stringify(forward));
             }
+            break;
           }
-          break;
-        }
 
-        case 'ping': {
-          ws.send(JSON.stringify({ type: 'pong' }));
-          break;
+          case 'rumble': {
+            const info = roomManager.getSocketInfo(ws);
+            if (!info || info.role !== 'console') return;
+            const room = roomManager.getRoom(info.roomCode);
+            if (room && msg.remoteId) {
+              const target = room.remotes.get(msg.remoteId);
+              if (target && target.readyState === WebSocket.OPEN) {
+                const forward: ServerMessage = {
+                  type: 'rumble',
+                  payload: msg.payload
+                };
+                target.send(JSON.stringify(forward));
+              }
+            }
+            break;
+          }
+
+          case 'ping': {
+            ws.send(JSON.stringify({ type: 'pong' }));
+            break;
+          }
+        }
+      } catch (err) {
+        console.error('[oui-relay] Error processing WS message:', err);
+      }
+    });
+
+    ws.on('close', () => {
+      const disconnected = roomManager.handleDisconnect(ws);
+      if (disconnected && disconnected.role === 'remote' && disconnected.remoteId) {
+        const room = roomManager.getRoom(disconnected.roomCode);
+        if (room && room.consoleSocket && room.consoleSocket.readyState === WebSocket.OPEN) {
+          const notify: ServerMessage = {
+            type: 'remote_disconnected',
+            remoteId: disconnected.remoteId
+          };
+          room.consoleSocket.send(JSON.stringify(notify));
         }
       }
-    } catch (err) {
-      console.error('[oui-relay] Error processing WS message:', err);
-    }
+    });
   });
+}
 
-  ws.on('close', () => {
-    const disconnected = roomManager.handleDisconnect(ws);
-    if (disconnected && disconnected.role === 'remote' && disconnected.remoteId) {
-      const room = roomManager.getRoom(disconnected.roomCode);
-      if (room && room.consoleSocket && room.consoleSocket.readyState === WebSocket.OPEN) {
-        const notify: ServerMessage = {
-          type: 'remote_disconnected',
-          remoteId: disconnected.remoteId
-        };
-        room.consoleSocket.send(JSON.stringify(notify));
-      }
-    }
-  });
-});
+// Attach handlers to both WS servers
+setupWebSocketHandler(wssHttp);
+if (wssHttps) {
+  setupWebSocketHandler(wssHttps);
+}
 
 // Periodic room cleanup
 setInterval(() => {
   roomManager.cleanupStaleRooms();
 }, 60000);
 
-server.listen(PORT, '0.0.0.0', () => {
-  const protocol = certs ? 'https' : 'http';
-  console.log(`\n======================================================`);
-  console.log(`  🎮 oui^^ Wii Remote Relay Server running on port ${PORT}`);
-  console.log(`  Local:   ${protocol}://localhost:${PORT}/controller`);
-  console.log(`  Network: ${protocol}://${lanIp}:${PORT}/controller`);
-  console.log(`  WS:      ${certs ? 'wss' : 'ws'}://${lanIp}:${PORT}/ws`);
-  console.log(`======================================================\n`);
+// Start listeners
+httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
+  console.log(`  [HTTP] Relay running on http://${lanIp}:${HTTP_PORT} (WS on /ws)`);
 });
+
+if (httpsServer) {
+  httpsServer.listen(HTTPS_PORT, '0.0.0.0', () => {
+    console.log(`  [HTTPS] Relay running on https://${lanIp}:${HTTPS_PORT} (WSS on /ws)`);
+  });
+}
+
+console.log(`\n======================================================`);
+console.log(`  🎮 oui^^ Wii Remote Dual Relay Server Ready`);
+console.log(`  Console WS:   ws://localhost:${HTTP_PORT}/ws`);
+console.log(`  Mobile HTTPS: https://${lanIp}:${HTTPS_PORT}/controller`);
+console.log(`  Mobile HTTP:  http://${lanIp}:${HTTP_PORT}/controller`);
+console.log(`======================================================\n`);

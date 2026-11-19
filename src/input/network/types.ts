@@ -61,6 +61,8 @@ export interface ServerMessage {
   remoteId?: 1 | 2;
   lanIp?: string;
   port?: number;
+  httpPort?: number;
+  httpsPort?: number;
   message?: string;
   payload?: SensorPacket | ButtonEventPayload | RumblePayload | unknown;
 }

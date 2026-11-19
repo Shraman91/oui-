@@ -19,6 +19,7 @@ export class PairingModal {
   private roomCodeElement: HTMLElement | null = null;
   private directUrlElement: HTMLElement | null = null;
   private copyBtn: HTMLButtonElement | null = null;
+  private protoBtn: HTMLButtonElement | null = null;
   private remote1Card: HTMLElement | null = null;
   private remote2Card: HTMLElement | null = null;
   private remote1Status: HTMLElement | null = null;
@@ -27,6 +28,7 @@ export class PairingModal {
   private relayStatusText: HTMLElement | null = null;
 
   private isOpen = false;
+  private preferHttps = true;
   private unsubscribeRoomCreated?: () => void;
   private unsubscribeRemoteConnected?: () => void;
   private unsubscribeRemoteDisconnected?: () => void;
@@ -63,9 +65,14 @@ export class PairingModal {
             <div class="oui-pairing-qr-info">
               <div class="oui-pairing-code-label">Room Code</div>
               <div class="oui-pairing-code-display" id="oui-pairing-code">----</div>
-              <button class="oui-pairing-copy-btn" id="oui-pairing-copy-btn">
-                <span>[Link]</span> Copy URL
-              </button>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="oui-pairing-copy-btn" id="oui-pairing-copy-btn">
+                  <span>[Link]</span> Copy URL
+                </button>
+                <button class="oui-pairing-copy-btn" id="oui-pairing-proto-btn" style="background: #f1f5f9; color: #475569; border-color: #cbd5e1;">
+                  Switch to HTTP
+                </button>
+              </div>
               <div class="oui-pairing-direct-url" id="oui-pairing-url">Generating room...</div>
             </div>
           </div>
@@ -100,7 +107,7 @@ export class PairingModal {
             <span class="oui-pairing-relay-dot" id="oui-pairing-relay-dot"></span>
             <span id="oui-pairing-relay-text">Relay Server: Connecting...</span>
           </div>
-          <div>Port 8443 (HTTPS/WSS)</div>
+          <div id="oui-pairing-port-text">Ports: 8080 (WS) & 8443 (WSS)</div>
         </div>
       </div>
     `;
@@ -112,6 +119,7 @@ export class PairingModal {
     this.roomCodeElement = this.backdropElement.querySelector('#oui-pairing-code');
     this.directUrlElement = this.backdropElement.querySelector('#oui-pairing-url');
     this.copyBtn = this.backdropElement.querySelector('#oui-pairing-copy-btn') as HTMLButtonElement;
+    this.protoBtn = this.backdropElement.querySelector('#oui-pairing-proto-btn') as HTMLButtonElement;
     this.remote1Card = this.backdropElement.querySelector('#oui-remote-card-1');
     this.remote2Card = this.backdropElement.querySelector('#oui-remote-card-2');
     this.remote1Status = this.backdropElement.querySelector('#oui-remote-status-1');
@@ -129,7 +137,7 @@ export class PairingModal {
     });
 
     this.copyBtn?.addEventListener('click', () => {
-      const url = this.relayClient.getControllerUrl();
+      const url = this.relayClient.getControllerUrl(this.preferHttps);
       if (url && navigator.clipboard) {
         navigator.clipboard.writeText(url).then(() => {
           if (this.copyBtn) {
@@ -143,6 +151,14 @@ export class PairingModal {
       }
     });
 
+    this.protoBtn?.addEventListener('click', () => {
+      this.preferHttps = !this.preferHttps;
+      const code = this.relayClient.getRoomCode();
+      if (code) {
+        this.updateRoomDisplay(code);
+      }
+    });
+
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.isOpen) {
         this.close();
@@ -151,15 +167,14 @@ export class PairingModal {
 
     // Update initial view if room is already created
     const existingCode = this.relayClient.getRoomCode();
-    const existingUrl = this.relayClient.getControllerUrl();
-    if (existingCode && existingUrl) {
-      this.updateRoomDisplay(existingCode, existingUrl);
+    if (existingCode) {
+      this.updateRoomDisplay(existingCode);
     }
   }
 
   private setupListeners(): void {
-    this.unsubscribeRoomCreated = this.relayClient.onRoomCreated((code, url) => {
-      this.updateRoomDisplay(code, url);
+    this.unsubscribeRoomCreated = this.relayClient.onRoomCreated((code) => {
+      this.updateRoomDisplay(code);
     });
 
     this.unsubscribeRemoteConnected = this.relayClient.onRemoteConnected((remoteId) => {
@@ -180,15 +195,21 @@ export class PairingModal {
     });
   }
 
-  private updateRoomDisplay(code: string, url: string): void {
+  private updateRoomDisplay(code: string): void {
     if (this.roomCodeElement) {
       this.roomCodeElement.textContent = code;
     }
+
+    const url = this.relayClient.getControllerUrl(this.preferHttps) || '';
     if (this.directUrlElement) {
       this.directUrlElement.textContent = url;
     }
 
-    if (this.qrCanvas) {
+    if (this.protoBtn) {
+      this.protoBtn.textContent = this.preferHttps ? 'Switch to HTTP' : 'Switch to HTTPS';
+    }
+
+    if (this.qrCanvas && url) {
       QRCode.toCanvas(
         this.qrCanvas,
         url,
@@ -231,9 +252,8 @@ export class PairingModal {
       this.relayClient.connect();
     } else {
       const code = this.relayClient.getRoomCode();
-      const url = this.relayClient.getControllerUrl();
-      if (code && url) {
-        this.updateRoomDisplay(code, url);
+      if (code) {
+        this.updateRoomDisplay(code);
       }
     }
   }
