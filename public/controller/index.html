@@ -227,6 +227,61 @@
       gap: 12px;
     }
 
+    /* Security Context Status Banner */
+    .security-status-banner {
+      width: 100%;
+      border-radius: 12px;
+      padding: 8px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.4;
+      display: none;
+    }
+
+    .security-status-banner.secure {
+      background: #f0fdf4;
+      border: 1.5px solid #bbf7d0;
+      color: #15803d;
+      display: block;
+    }
+
+    .security-status-banner.insecure {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+      color: #b45309;
+      display: block;
+    }
+
+    /* Touch Aiming Trackpad */
+    .touch-aim-zone {
+      width: 100%;
+      height: 48px;
+      background: #fdf2f8;
+      border: 2px dashed #f472b6;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 800;
+      color: #be185d;
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+      margin: 4px 0;
+      transition: all 0.1s ease;
+    }
+
+    .touch-aim-zone.dragging {
+      background: #fce7f3;
+      border-style: solid;
+      border-color: #ec4899;
+      transform: scale(0.99);
+      cursor: grabbing;
+    }
+
     /* Telemetry Pill Bar */
     .telemetry-bar {
       width: 100%;
@@ -569,6 +624,8 @@
         <input type="text" id="roomInput" class="room-input" maxlength="4" placeholder="----" autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false">
       </div>
 
+      <div class="security-status-banner"></div>
+
       <button id="connectStartBtn" class="btn-connect-start">
         <span>🎮</span> Connect & Start Remote
       </button>
@@ -582,6 +639,8 @@
         <div id="telHz">60 Hz</div>
         <div id="telPing">Ping: -- ms</div>
       </div>
+
+      <div class="security-status-banner"></div>
 
       <!-- D-Pad -->
       <div class="dpad-container">
@@ -623,6 +682,12 @@
       <div class="numeric-buttons-row">
         <button class="btn-numeric" data-btn="ONE">1</button>
         <button class="btn-numeric" data-btn="TWO">2</button>
+      </div>
+
+      <!-- Touch Aiming Trackpad -->
+      <div class="touch-aim-zone" id="touchAimZone">
+        <span>🎯</span>
+        <span>Touch / Drag to Aim (or Tilt Phone)</span>
       </div>
 
       <!-- Simulated Speaker Holes -->
@@ -764,64 +829,91 @@
         }
       });
 
-      // 5. Motion Listeners
+      // 5. Security Context & Motion Listeners
+      const isSecure = window.isSecureContext || window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+      const secBanners = document.querySelectorAll('.security-status-banner');
+      secBanners.forEach(banner => {
+        if (isSecure) {
+          banner.className = 'security-status-banner secure';
+          banner.textContent = '🔒 HTTPS Secure: Motion & Gyroscope Sensors Ready';
+        } else {
+          banner.className = 'security-status-banner insecure';
+          banner.textContent = '⚠️ HTTP Mode: Browser blocks motion sensors without HTTPS. Use Touch Aim pad below, or connect via HTTPS (:8443)!';
+        }
+      });
+
       let motionStarted = false;
-      async function requestMotionPermissions() {
-        // iOS 13+ permission request
-        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-          try {
-            const orientationPerm = await DeviceOrientationEvent.requestPermission();
-            if (orientationPerm !== 'granted') {
-              console.warn('DeviceOrientation permission denied');
-            }
-          } catch (e) {
-            console.warn('DeviceOrientation request error:', e);
+      let hasRealMotionEvents = false;
+
+      function attachSensors() {
+        if (motionStarted) return;
+        motionStarted = true;
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        window.addEventListener('devicemotion', handleMotion, true);
+
+        // Live phone-side telemetry preview
+        setInterval(() => {
+          if (telMotion) {
+            telMotion.textContent = `Aim: ${sensorData.orientation.alpha.toFixed(0)}° / ${sensorData.orientation.beta.toFixed(0)}°`;
           }
+        }, 120);
+      }
+
+      // Attach immediately at script start
+      attachSensors();
+
+      function requestMotionPermissions() {
+        // iOS 13+ permission request (must be initiated directly in user click/touch gesture)
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission()
+            .then(perm => {
+              if (perm === 'granted') {
+                attachSensors();
+              }
+            })
+            .catch(e => console.warn('DeviceOrientation perm err:', e));
         }
 
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-          try {
-            const motionPerm = await DeviceMotionEvent.requestPermission();
-            if (motionPerm !== 'granted') {
-              console.warn('DeviceMotion permission denied');
-            }
-          } catch (e) {
-            console.warn('DeviceMotion request error:', e);
-          }
+          DeviceMotionEvent.requestPermission()
+            .then(perm => {
+              if (perm === 'granted') {
+                attachSensors();
+              }
+            })
+            .catch(e => console.warn('DeviceMotion perm err:', e));
         }
 
-        if (!motionStarted) {
-          window.addEventListener('deviceorientation', handleOrientation, true);
-          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
-          window.addEventListener('devicemotion', handleMotion, true);
-          motionStarted = true;
-
-          // Live phone-side telemetry preview
-          setInterval(() => {
-            if (telMotion) {
-              telMotion.textContent = `${sensorData.orientation.alpha.toFixed(0)}° / ${sensorData.orientation.beta.toFixed(0)}°`;
-            }
-          }, 150);
-        }
+        attachSensors();
       }
 
       function handleOrientation(event) {
-        if (event.alpha !== null && event.alpha !== undefined) sensorData.orientation.alpha = event.alpha;
-        if (event.beta !== null && event.beta !== undefined) sensorData.orientation.beta = event.beta;
-        if (event.gamma !== null && event.gamma !== undefined) sensorData.orientation.gamma = event.gamma;
+        if (event.alpha !== null && event.alpha !== undefined) {
+          sensorData.orientation.alpha = event.alpha;
+          hasRealMotionEvents = true;
+        }
+        if (event.beta !== null && event.beta !== undefined) {
+          sensorData.orientation.beta = event.beta;
+          hasRealMotionEvents = true;
+        }
+        if (event.gamma !== null && event.gamma !== undefined) {
+          sensorData.orientation.gamma = event.gamma;
+          hasRealMotionEvents = true;
+        }
       }
 
       function handleMotion(event) {
         if (event.rotationRate) {
-          sensorData.rotationRate.alpha = event.rotationRate.alpha || 0;
-          sensorData.rotationRate.beta = event.rotationRate.beta || 0;
-          sensorData.rotationRate.gamma = event.rotationRate.gamma || 0;
+          if (event.rotationRate.alpha !== null) sensorData.rotationRate.alpha = event.rotationRate.alpha;
+          if (event.rotationRate.beta !== null) sensorData.rotationRate.beta = event.rotationRate.beta;
+          if (event.rotationRate.gamma !== null) sensorData.rotationRate.gamma = event.rotationRate.gamma;
         }
 
         if (event.acceleration) {
-          sensorData.accel.x = event.acceleration.x || 0;
-          sensorData.accel.y = event.acceleration.y || 0;
-          sensorData.accel.z = event.acceleration.z || 0;
+          if (event.acceleration.x !== null) sensorData.accel.x = event.acceleration.x;
+          if (event.acceleration.y !== null) sensorData.accel.y = event.acceleration.y;
+          if (event.acceleration.z !== null) sensorData.accel.z = event.acceleration.z;
         }
 
         if (event.accelerationIncludingGravity) {
@@ -833,11 +925,53 @@
           sensorData.accelG.z = gz;
 
           // Accelerometer fallback if orientation is zero or blocked
-          if (sensorData.orientation.beta === 0 && sensorData.orientation.gamma === 0 && (gx !== 0 || gy !== 0 || gz !== 0)) {
+          if (!hasRealMotionEvents && (gx !== 0 || gy !== 0 || gz !== 0)) {
             sensorData.orientation.beta = Math.atan2(gy, Math.sqrt(gx * gx + gz * gz)) * (180 / Math.PI);
             sensorData.orientation.gamma = Math.atan2(-gx, gz) * (180 / Math.PI);
           }
         }
+      }
+
+      // Touch Aiming Drag Handler
+      const touchAimZone = document.getElementById('touchAimZone');
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let isDraggingAim = false;
+
+      if (touchAimZone) {
+        function onAimStart(e) {
+          const pt = e.touches ? e.touches[0] : e;
+          touchStartX = pt.clientX;
+          touchStartY = pt.clientY;
+          isDraggingAim = true;
+          touchAimZone.classList.add('dragging');
+        }
+
+        function onAimMove(e) {
+          if (!isDraggingAim) return;
+          const pt = e.touches ? e.touches[0] : e;
+          const dx = pt.clientX - touchStartX;
+          const dy = pt.clientY - touchStartY;
+          touchStartX = pt.clientX;
+          touchStartY = pt.clientY;
+
+          // Drag right -> rotate yaw right (positive)
+          // Drag up -> aim up (higher pitch)
+          sensorData.orientation.alpha = (sensorData.orientation.alpha + dx * 0.45 + 360) % 360;
+          sensorData.orientation.beta = Math.max(-85, Math.min(85, sensorData.orientation.beta - dy * 0.45));
+        }
+
+        function onAimEnd() {
+          isDraggingAim = false;
+          touchAimZone.classList.remove('dragging');
+        }
+
+        touchAimZone.addEventListener('touchstart', onAimStart, { passive: true });
+        touchAimZone.addEventListener('touchmove', onAimMove, { passive: true });
+        touchAimZone.addEventListener('touchend', onAimEnd, { passive: true });
+        touchAimZone.addEventListener('pointerdown', onAimStart);
+        window.addEventListener('pointermove', onAimMove);
+        window.addEventListener('pointerup', onAimEnd);
       }
 
       // 6. WebSocket Connection
@@ -1081,6 +1215,10 @@
       });
 
       connectStartBtn.addEventListener('click', connectAndStart);
+      connectStartBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        connectAndStart();
+      });
     })();
   </script>
 </body>

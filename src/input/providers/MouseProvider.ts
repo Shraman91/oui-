@@ -72,6 +72,21 @@ export class MouseProvider implements InputProvider {
   public update(dt: number): void {
     if (!this.isRunning || dt <= 0) return;
 
+    const isMousePrimary = this.inputManager.getActiveProvider()?.id === 'mouse';
+    const isRecentlyActive = this.inputManager.isMouseRecentlyActive(800);
+
+    // If another provider (like Phone) is active and mouse is idle, sync coords and yield
+    if (!isMousePrimary && !isRecentlyActive) {
+      const cur = this.inputManager.getState().pointer;
+      this.currentPointer.x = cur.x;
+      this.currentPointer.y = cur.y;
+      this.targetPointer.x = cur.x;
+      this.targetPointer.y = cur.y;
+      this.lastPointer.x = cur.x;
+      this.lastPointer.y = cur.y;
+      return;
+    }
+
     // 1. Pointer smoothing (EMA)
     const alpha = INPUT_CONSTANTS.MOUSE.POINTER_ALPHA;
     // Frame-rate independent exponential smoothing factor
@@ -127,6 +142,7 @@ export class MouseProvider implements InputProvider {
   }
 
   private handleMouseMove(e: MouseEvent): void {
+    this.inputManager.notifyMouseActivity();
     let width = window.innerWidth;
     let height = window.innerHeight;
 
@@ -146,6 +162,7 @@ export class MouseProvider implements InputProvider {
   }
 
   private handleMouseDown(e: MouseEvent): void {
+    this.inputManager.notifyMouseActivity();
     if (e.button === 0) {
       // Left click = Button A
       this.inputManager.updateState({ buttonA: true });

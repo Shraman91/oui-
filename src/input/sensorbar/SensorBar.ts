@@ -78,9 +78,11 @@ export class SensorBar {
     this.filteredAngles.pitch = rawPitch;
     this.filteredAngles.roll = rawRoll;
 
-    // Auto-center on the very first packet
+    // Auto-center on the first packet that contains real orientation readings
     if (!this.isCalibrated) {
-      this.recenter();
+      if (Math.abs(rawYaw) > 0.001 || Math.abs(rawPitch) > 0.001 || Math.abs(rawRoll) > 0.001) {
+        this.recenter();
+      }
     }
 
     // 1. Calculate angular deltas relative to calibrated center
@@ -160,6 +162,19 @@ export class SensorBar {
       isCalibrated: this.isCalibrated,
       lastPacketTime: this.lastPacketTime
     };
+  }
+
+  public hasValidMotion(): boolean {
+    return (
+      Math.abs(this.rawAngles.yaw) > 0.001 ||
+      Math.abs(this.rawAngles.pitch) > 0.001 ||
+      Math.abs(this.rawAngles.roll) > 0.001
+    );
+  }
+
+  public setPointer(x: number, y: number): void {
+    this.pointer.x = Math.max(0, Math.min(1, x));
+    this.pointer.y = Math.max(0, Math.min(1, y));
   }
 
   public reset(): void {

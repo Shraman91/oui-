@@ -61,6 +61,16 @@ export class PhoneProvider implements InputProvider {
         }
       }
 
+      // If mouse or trackpad is being actively moved by user on PC, yield pointer to mouse
+      if (this.inputManager.isMouseRecentlyActive(800)) {
+        return;
+      }
+
+      // If phone sensors have no valid motion data (offline / 0°), do not force pointer
+      if (!this.sensorBar.hasValidMotion()) {
+        return;
+      }
+
       // Update InputManager state so Cursor and games read phone pointer
       this.inputManager.updateState({
         pointer: { ...state.pointer },

@@ -17,7 +17,6 @@ export class CalibrationModal {
   private onClose?: () => void;
 
   private backdropElement: HTMLElement | null = null;
-  private liveCursor: HTMLElement | null = null;
   private targetRing: HTMLElement | null = null;
   private coordsBadge: HTMLElement | null = null;
   private sensitivitySlider: HTMLInputElement | null = null;
@@ -63,9 +62,6 @@ export class CalibrationModal {
             <div class="oui-calib-target-ring" id="oui-calib-target">
               <div class="oui-calib-target-dot"></div>
             </div>
-            <div class="oui-calib-live-cursor" id="oui-calib-cursor">
-              ${PIXEL_ICONS.pixelHand}
-            </div>
             <div class="oui-calib-preview-badge" id="oui-calib-badge">
               Pointer: (0.500, 0.500)
             </div>
@@ -94,7 +90,6 @@ export class CalibrationModal {
     this.container.appendChild(this.backdropElement);
 
     // Grab element references
-    this.liveCursor = this.backdropElement.querySelector('#oui-calib-cursor');
     this.targetRing = this.backdropElement.querySelector('#oui-calib-target');
     this.coordsBadge = this.backdropElement.querySelector('#oui-calib-badge');
     this.sensitivitySlider = this.backdropElement.querySelector('#oui-calib-slider') as HTMLInputElement;
@@ -138,10 +133,6 @@ export class CalibrationModal {
         const state = this.sensorBar.update(packet);
 
         if (this.isOpen) {
-          if (this.liveCursor) {
-            this.liveCursor.style.left = `${(state.pointer.x * 100).toFixed(2)}%`;
-            this.liveCursor.style.top = `${(state.pointer.y * 100).toFixed(2)}%`;
-          }
           if (this.coordsBadge) {
             this.coordsBadge.textContent = `Pointer: (${state.pointer.x.toFixed(3)}, ${state.pointer.y.toFixed(3)}) • Yaw: ${state.filteredAngles.yaw.toFixed(0)}° Pitch: ${state.filteredAngles.pitch.toFixed(0)}°`;
           }

@@ -46,6 +46,8 @@ export class InputManager {
 
   private providers: Map<string, InputProvider> = new Map();
   private activeProvider: InputProvider | null = null;
+  private fallbackProvider: InputProvider | null = null;
+  private lastMouseActivity = 0;
 
   public getState(): Readonly<InputState> {
     return this.state;
@@ -196,6 +198,10 @@ export class InputManager {
    */
   public registerProvider(provider: InputProvider): void {
     this.providers.set(provider.id, provider);
+    if (provider.id === 'mouse') {
+      this.fallbackProvider = provider;
+      this.fallbackProvider.start();
+    }
     if (!this.activeProvider) {
       this.setActiveProvider(provider.id);
     }
@@ -209,7 +215,10 @@ export class InputManager {
     if (!next) return false;
 
     if (this.activeProvider && this.activeProvider !== next) {
-      this.activeProvider.stop();
+      // Do not stop fallback provider (mouse) so mouse/trackpad always stays available
+      if (this.activeProvider !== this.fallbackProvider) {
+        this.activeProvider.stop();
+      }
     }
 
     this.activeProvider = next;
@@ -225,10 +234,21 @@ export class InputManager {
     return Array.from(this.providers.values());
   }
 
+  public notifyMouseActivity(): void {
+    this.lastMouseActivity = performance.now();
+  }
+
+  public isMouseRecentlyActive(thresholdMs = 800): boolean {
+    return performance.now() - this.lastMouseActivity < thresholdMs;
+  }
+
   /**
-   * Advances active provider loop each frame.
+   * Advances active provider and fallback provider loops each frame.
    */
   public update(dt: number): void {
+    if (this.fallbackProvider && this.fallbackProvider !== this.activeProvider) {
+      this.fallbackProvider.update(dt);
+    }
     if (this.activeProvider) {
       this.activeProvider.update(dt);
     }
@@ -238,6 +258,9 @@ export class InputManager {
    * Cleanly stops active provider and clears listeners.
    */
   public destroy(): void {
+    if (this.fallbackProvider && this.fallbackProvider !== this.activeProvider) {
+      this.fallbackProvider.stop();
+    }
     if (this.activeProvider) {
       this.activeProvider.stop();
     }
@@ -246,7 +269,9 @@ export class InputManager {
     this.pressBListeners.clear();
     this.releaseAListeners.clear();
     this.releaseBListeners.clear();
+    this.rumbleListeners.clear();
     this.providers.clear();
     this.activeProvider = null;
+    this.fallbackProvider = null;
   }
 }
