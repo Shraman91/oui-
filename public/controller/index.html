@@ -768,6 +768,10 @@
           <div class="diag-row"><span>Raw Beta (Pitch):</span> <strong id="diagBeta">0°</strong></div>
           <div class="diag-row"><span>Raw Gamma (Roll):</span> <strong id="diagGamma">0°</strong></div>
           <button type="button" class="btn-diag-test" id="btnRequestSensorPerm">Request / Unlock Motion Sensors</button>
+          <div style="font-size: 10px; color: #64748b; line-height: 1.35; margin-top: 6px; text-align: left; background: #f8fafc; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0;">
+            <strong>If denied on Android:</strong><br>
+            Tap the 🎚️ Tune/Lock icon next to the URL above &gt; <em>Permissions / Site settings</em> &gt; <em>Motion sensors</em> &gt; Set to <strong>Allow</strong> &gt; Reload.
+          </div>
         </div>
       </details>
     </div>
@@ -980,24 +984,34 @@
       async function requestMotionPermissions() {
         let requested = false;
         let granted = false;
+        const isAndroid = /Android/i.test(navigator.userAgent);
 
-        // iOS 13+ DeviceOrientationEvent permission request
+        // iOS 13+ / Android Chrome / Samsung Internet DeviceOrientationEvent permission request
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
           requested = true;
           try {
             const perm = await DeviceOrientationEvent.requestPermission();
             if (perm === 'granted') {
               granted = true;
+              alert('✅ Motion Permission Granted! Tilt/aim your phone to test.');
             } else {
-              alert(`Motion Permission was: ${perm}.\n\nPlease check iPhone Settings > Safari > Motion & Orientation Access (Turn ON), or tap "aA" in Safari address bar -> Website Settings -> Motion.`);
+              if (isAndroid) {
+                alert(`⚠️ Motion Permission is currently: ${perm}\n\nTo enable on Android:\n1. Tap the Tune / Lock icon (🎚️) on the left side of the address bar.\n2. Tap "Site settings" or "Permissions".\n3. Tap "Motion sensors" and change it to "Allow".\n4. Reload this page!`);
+              } else {
+                alert(`⚠️ Motion Permission was: ${perm}.\n\nPlease check iPhone Settings > Safari > Motion & Orientation Access (Turn ON), or tap "aA" in Safari address bar -> Website Settings -> Motion.`);
+              }
             }
           } catch (e) {
             console.warn('DeviceOrientation perm err:', e);
-            alert(`Motion sensor notice: ${e.message || e}\n\nNote: Safari requires HTTPS to access motion sensors.`);
+            if (isAndroid) {
+              alert(`Motion sensor notice: ${e.message || e}\n\nTo enable on Android:\nTap the Tune / Lock icon in the address bar -> Site settings -> Motion sensors -> Allow.`);
+            } else {
+              alert(`Motion sensor notice: ${e.message || e}\n\nNote: Safari requires HTTPS to access motion sensors.`);
+            }
           }
         }
 
-        // iOS 13+ DeviceMotionEvent permission request
+        // DeviceMotionEvent permission request
         if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
           try {
             await DeviceMotionEvent.requestPermission();
@@ -1010,7 +1024,7 @@
 
         if (!requested) {
           if (!isSecure) {
-            alert('⚠️ HTTP Mode Detected!\n\nMobile browsers (Chrome & Safari) disable gyroscope sensors on unencrypted HTTP.\n\nPlease open the HTTPS link (:8443) and accept the self-signed certificate (Advanced > Proceed).');
+            alert('⚠️ HTTP Mode Detected!\n\nMobile browsers disable gyroscope sensors on unencrypted HTTP.\n\nPlease open the HTTPS link (:8443) and accept the self-signed certificate (Advanced > Proceed).');
           } else {
             alert('Sensors initialized! If events remain 0:\n1. Ensure "Auto-rotate" is ON in phone settings.\n2. In Chrome, check Site Settings > Motion sensors > Allowed.');
           }
