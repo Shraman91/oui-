@@ -6,12 +6,14 @@ import { PIXEL_ICONS } from '../shared/pixelIcons';
 export interface PairingModalOptions {
   container: HTMLElement;
   relayClient: RelayClient;
+  onOpenCalibration?: () => void;
   onClose?: () => void;
 }
 
 export class PairingModal {
   private container: HTMLElement;
   private relayClient: RelayClient;
+  private onOpenCalibration?: () => void;
   private onClose?: () => void;
 
   private backdropElement: HTMLElement | null = null;
@@ -37,6 +39,7 @@ export class PairingModal {
   constructor(options: PairingModalOptions) {
     this.container = options.container;
     this.relayClient = options.relayClient;
+    this.onOpenCalibration = options.onOpenCalibration;
     this.onClose = options.onClose;
 
     this.mount();
@@ -95,6 +98,12 @@ export class PairingModal {
             </div>
           </div>
 
+          <div style="display: flex; gap: 10px;">
+            <button class="oui-pairing-copy-btn" id="oui-btn-open-calibration" style="width: 100%; justify-content: center; padding: 10px 14px; background: #fdf2f8; border-color: #f472b6;">
+              <span>🎯</span> Open Sensor Bar Calibration
+            </button>
+          </div>
+
           <div class="oui-pairing-instructions">
             <div><strong>1. Same Wi-Fi:</strong> Ensure phone is on the same Wi-Fi as this console.</div>
             <div><strong>2. Scan QR:</strong> Open camera app or QR scanner and open the link.</div>
@@ -129,6 +138,12 @@ export class PairingModal {
 
     const closeBtn = this.backdropElement.querySelector('#oui-pairing-close-btn');
     closeBtn?.addEventListener('click', () => this.close());
+
+    const calibBtn = this.backdropElement.querySelector('#oui-btn-open-calibration');
+    calibBtn?.addEventListener('click', () => {
+      this.close();
+      this.onOpenCalibration?.();
+    });
 
     this.backdropElement.addEventListener('click', (e) => {
       if (e.target === this.backdropElement) {

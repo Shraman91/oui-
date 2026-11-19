@@ -2,7 +2,9 @@ import { InputManager } from '../input/InputManager';
 import { MouseProvider } from '../input/providers/MouseProvider';
 import { Cursor } from '../input/Cursor';
 import { RelayClient } from '../input/network/RelayClient';
+import { SensorBar } from '../input/sensorbar/SensorBar';
 import { PairingModal } from '../menu/PairingModal';
+import { CalibrationModal } from '../menu/CalibrationModal';
 import { SceneManager } from './SceneManager';
 import { Menu, CHANNELS } from '../menu/Menu';
 import { BootSplash } from '../menu/BootSplash';
@@ -19,7 +21,9 @@ class OuiConsoleApp {
   private mouseProvider: MouseProvider;
   private cursor: Cursor;
   private relayClient: RelayClient;
+  private sensorBar: SensorBar;
   private pairingModal: PairingModal;
+  private calibrationModal: CalibrationModal;
   private sceneManager: SceneManager;
   private settingsOverlay: SettingsOverlay;
   private menu: Menu | null = null;
@@ -44,31 +48,54 @@ class OuiConsoleApp {
     });
     this.cursor.mount();
 
-    // 3. Initialize Relay Client & Pairing Modal
+    // 3. Initialize SensorBar & Relay Client
+    this.sensorBar = new SensorBar();
     this.relayClient = new RelayClient({ autoConnect: true });
-    this.pairingModal = new PairingModal({
+
+    // 4. Initialize Modals
+    this.calibrationModal = new CalibrationModal({
       container: this.appElement,
-      relayClient: this.relayClient
+      relayClient: this.relayClient,
+      sensorBar: this.sensorBar
     });
 
-    // 4. Initialize Settings & Telemetry Overlay (Tab key / Wii Options button)
+    this.pairingModal = new PairingModal({
+      container: this.appElement,
+      relayClient: this.relayClient,
+      onOpenCalibration: () => this.calibrationModal.open()
+    });
+
+    // Auto-open Calibration screen on first remote connection
+    let firstConnectionDone = false;
+    this.relayClient.onRemoteConnected(() => {
+      if (!firstConnectionDone) {
+        firstConnectionDone = true;
+        this.pairingModal.close();
+        setTimeout(() => {
+          this.calibrationModal.open();
+        }, 300);
+      }
+    });
+
+    // 5. Initialize Settings & Telemetry Overlay (Tab key / Wii Options button)
     this.settingsOverlay = new SettingsOverlay({
       container: this.appElement,
       inputManager: this.inputManager,
       onProviderChange: () => {
         this.menu?.updateProviderBadge();
       },
-      onOpenPairing: () => this.pairingModal.open()
+      onOpenPairing: () => this.pairingModal.open(),
+      onOpenCalibration: () => this.calibrationModal.open()
     });
 
-    // 5. Initialize Scene Manager
+    // 6. Initialize Scene Manager
     this.sceneManager = new SceneManager({
       container: this.appElement,
       inputManager: this.inputManager,
       onReturnToMenu: () => this.showMenu()
     });
 
-    // 6. Play Boot Splash before showing menu
+    // 7. Play Boot Splash before showing menu
     this.playBootSplash();
   }
 

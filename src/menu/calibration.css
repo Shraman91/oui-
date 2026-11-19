@@ -1,0 +1,305 @@
+/* oui^^ Wii Remote Sensor Bar Calibration Modal */
+
+.oui-calib-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(56, 44, 51, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.oui-calib-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.oui-calib-modal {
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  border: 3px solid #f3d7e5;
+  border-radius: 28px;
+  box-shadow: 0 20px 40px -10px rgba(244, 114, 182, 0.25), 0 10px 20px -5px rgba(56, 44, 51, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.oui-calib-backdrop.open .oui-calib-modal {
+  transform: translateY(0) scale(1);
+}
+
+.oui-calib-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  background: #fdf2f8;
+  border-bottom: 2px solid #f3d7e5;
+}
+
+.oui-calib-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.oui-calib-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #382c33;
+  letter-spacing: -0.5px;
+}
+
+.oui-calib-close-btn {
+  background: transparent;
+  border: none;
+  color: #8b7582;
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.oui-calib-close-btn:hover {
+  background: #fce7f3;
+  color: #ec4899;
+}
+
+.oui-calib-body {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.oui-calib-instruction-banner {
+  background: #fdf2f8;
+  border: 1.5px solid #fbcfe8;
+  border-radius: 14px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #be185d;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* 16:9 Live Pointer Preview Box */
+.oui-calib-preview-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #faf7f8;
+  border: 2px solid #f3d7e5;
+  border-radius: 18px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 2px 8px rgba(56, 44, 51, 0.05);
+}
+
+/* Center Crosshair and Target */
+.oui-calib-crosshair-x {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  border-top: 1.5px dashed #fbcfe8;
+  pointer-events: none;
+}
+
+.oui-calib-crosshair-y {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  border-left: 1.5px dashed #fbcfe8;
+  pointer-events: none;
+}
+
+.oui-calib-target-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  transform: translate(-50%, -50%);
+  border: 2.5px solid #f472b6;
+  border-radius: 50%;
+  background: rgba(254, 242, 248, 0.6);
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oui-calib-target-dot {
+  width: 8px;
+  height: 8px;
+  background: #db2777;
+  border-radius: 50%;
+}
+
+/* Live Hand Cursor inside preview */
+.oui-calib-live-cursor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 36px;
+  height: 36px;
+  transform: translate(-30%, -20%);
+  pointer-events: none;
+  transition: transform 0.04s ease;
+  z-index: 10;
+  filter: drop-shadow(2px 3px 0px rgba(56, 44, 51, 0.15));
+}
+
+.oui-calib-preview-badge {
+  position: absolute;
+  bottom: 8px;
+  left: 10px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #f3d7e5;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #382c33;
+  font-family: ui-monospace, monospace;
+}
+
+/* Sensitivity Slider */
+.oui-calib-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: #faf7f8;
+  border: 1px solid #f3d7e5;
+  border-radius: 16px;
+  padding: 14px 16px;
+}
+
+.oui-calib-slider-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.oui-calib-slider-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #382c33;
+}
+
+.oui-calib-slider-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #db2777;
+  min-width: 44px;
+  text-align: right;
+  font-family: ui-monospace, monospace;
+}
+
+.oui-calib-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 4px;
+  background: #fce7f3;
+  outline: none;
+  border: 1.5px solid #f3d7e5;
+}
+
+.oui-calib-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f472b6;
+  border: 2px solid #382c33;
+  cursor: pointer;
+  box-shadow: 1px 1px 0px #382c33;
+}
+
+.oui-calib-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #f472b6;
+  border: 2px solid #382c33;
+  cursor: pointer;
+  box-shadow: 1px 1px 0px #382c33;
+}
+
+/* Actions Row */
+.oui-calib-actions-row {
+  display: flex;
+  gap: 12px;
+}
+
+.oui-calib-btn-recenter {
+  flex: 1;
+  background: #fce7f3;
+  color: #be185d;
+  border: 2px solid #382c33;
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px #382c33;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.oui-calib-btn-recenter:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+  background: #fbcfe8;
+}
+
+.oui-calib-btn-done {
+  flex: 1;
+  background: #f472b6;
+  color: #ffffff;
+  border: 2px solid #382c33;
+  border-radius: 14px;
+  padding: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px #382c33;
+  transition: all 0.1s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.oui-calib-btn-done:active {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+  background: #ec4899;
+}

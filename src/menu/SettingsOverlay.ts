@@ -7,6 +7,7 @@ export interface SettingsOverlayOptions {
   inputManager: InputManager;
   onProviderChange?: (providerId: string) => void;
   onOpenPairing?: () => void;
+  onOpenCalibration?: () => void;
 }
 
 export class SettingsOverlay {
@@ -14,6 +15,7 @@ export class SettingsOverlay {
   private inputManager: InputManager;
   private onProviderChange?: (providerId: string) => void;
   private onOpenPairing?: () => void;
+  private onOpenCalibration?: () => void;
 
   private backdropElement: HTMLElement | null = null;
   private isOpen = false;
@@ -25,6 +27,7 @@ export class SettingsOverlay {
     this.inputManager = options.inputManager;
     this.onProviderChange = options.onProviderChange;
     this.onOpenPairing = options.onOpenPairing;
+    this.onOpenCalibration = options.onOpenCalibration;
 
     this.inputManager.on('swing', (payload) => {
       this.lastSwingInfo = `${payload.speed.toFixed(1)} u/s (${payload.direction.x.toFixed(2)}, ${payload.direction.y.toFixed(2)})`;
@@ -91,9 +94,12 @@ export class SettingsOverlay {
 
           <div>
             <div class="oui-settings-section-title">[ Wii Remote & Phone Pairing ]</div>
-            <div style="margin-top: 0.6rem;">
+            <div style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 8px;">
               <button class="oui-pill-btn" id="oui-settings-open-pairing-btn" style="width: 100%; padding: 0.75rem 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
                 <span class="oui-btn-icon">${PIXEL_ICONS.wiiRemote}</span> Pair Phone as Wii Remote (QR Code)
+              </button>
+              <button class="oui-pill-btn" id="oui-settings-open-calib-btn" style="width: 100%; padding: 0.75rem 1rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; background: #fdf2f8;">
+                <span class="oui-btn-icon">🎯</span> Sensor Bar Calibration Screen
               </button>
             </div>
           </div>
@@ -140,6 +146,12 @@ export class SettingsOverlay {
     pairBtn?.addEventListener('click', () => {
       this.close();
       this.onOpenPairing?.();
+    });
+
+    const calibBtn = this.backdropElement.querySelector('#oui-settings-open-calib-btn');
+    calibBtn?.addEventListener('click', () => {
+      this.close();
+      this.onOpenCalibration?.();
     });
 
     const items = this.backdropElement.querySelectorAll('.oui-provider-item');
