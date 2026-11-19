@@ -14,6 +14,7 @@ export class Cursor {
   private cursorElement: HTMLElement | null = null;
   private isHovering = false;
   private showPlayerBadge: boolean;
+  private hoverFrameCounter = 0;
 
   private unsubPressA?: () => void;
   private unsubReleaseA?: () => void;
@@ -103,27 +104,31 @@ export class Cursor {
     // Roll angle: ±35 degrees based on tilt.roll
     const rotationDeg = state.tilt.roll * 35;
 
+    // Position updates every frame at maximum display refresh rate
     this.cursorElement.style.transform = `translate3d(${screenX}px, ${screenY}px, 0) rotate(${rotationDeg}deg)`;
 
-    // Detect if hovering an interactive element
-    const el = document.elementFromPoint(screenX, screenY);
-    const isInteractive = Boolean(
-      el && (
-        el.tagName === 'BUTTON' ||
-        el.closest('button') ||
-        el.closest('.oui-channel-tile') ||
-        el.closest('.oui-pill-btn') ||
-        el.hasAttribute('data-channel-id') ||
-        el.getAttribute('role') === 'button'
-      )
-    );
+    // Throttle document.elementFromPoint hit-testing to every 5 frames to eliminate synchronous browser layout recalcs
+    this.hoverFrameCounter++;
+    if (this.hoverFrameCounter % 5 === 0) {
+      const el = document.elementFromPoint(screenX, screenY);
+      const isInteractive = Boolean(
+        el && (
+          el.tagName === 'BUTTON' ||
+          el.closest('button') ||
+          el.closest('.oui-channel-tile') ||
+          el.closest('.oui-pill-btn') ||
+          el.hasAttribute('data-channel-id') ||
+          el.getAttribute('role') === 'button'
+        )
+      );
 
-    if (isInteractive !== this.isHovering) {
-      this.isHovering = isInteractive;
-      if (this.isHovering) {
-        this.cursorElement.classList.add('hovering');
-      } else {
-        this.cursorElement.classList.remove('hovering');
+      if (isInteractive !== this.isHovering) {
+        this.isHovering = isInteractive;
+        if (this.isHovering) {
+          this.cursorElement.classList.add('hovering');
+        } else {
+          this.cursorElement.classList.remove('hovering');
+        }
       }
     }
   }

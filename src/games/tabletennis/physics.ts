@@ -23,6 +23,13 @@ export interface CollisionEvent {
   normal?: THREE.Vector3;
 }
 
+export interface TrajectoryPrediction {
+  interceptPoint: THREE.Vector3;
+  timeToIntercept: number;
+  willBounceTable: boolean;
+  bouncePoint?: THREE.Vector3;
+}
+
 export class TableTennisPhysics {
   private state: BallPhysicsState;
   private prevPosition = new THREE.Vector3();
@@ -89,11 +96,92 @@ export class TableTennisPhysics {
     );
   }
 
+  public predictTrajectory(targetZ: number): TrajectoryPrediction | null {
+    if (this.state.state !== 'in_play' && this.state.state !== 'serving') {
+      return null;
+    }
+
+    const vz = this.state.velocity.z;
+    if (Math.abs(vz) < 0.1) return null;
+
+    // Moving away from targetZ
+    if (targetZ < 0 && vz >= 0) return null;
+    if (targetZ > 0 && vz <= 0) return null;
+
+    const dt = 0.016;
+    let simX = this.state.position.x;
+    let simY = this.state.position.y;
+    let simZ = this.state.position.z;
+    let simVx = this.state.velocity.x;
+    let simVy = this.state.velocity.y;
+    let simVz = this.state.velocity.z;
+
+    const tblW = TABLE_TENNIS_CONSTANTS.TABLE.WIDTH;
+    const tblL = TABLE_TENNIS_CONSTANTS.TABLE.LENGTH;
+    const tableTopY = TABLE_TENNIS_CONSTANTS.TABLE.SURFACE_Y;
+    const ballR = TABLE_TENNIS_CONSTANTS.BALL.RADIUS;
+
+    let willBounceTable = false;
+    let bouncePoint: THREE.Vector3 | undefined;
+    let totalTime = 0;
+
+    const maxSteps = 120; // Up to ~2 seconds forward
+    for (let step = 0; step < maxSteps; step++) {
+      totalTime += dt;
+      const prevY = simY;
+
+      // Integrate physics
+      simVy += TABLE_TENNIS_CONSTANTS.BALL.GRAVITY * dt;
+      simVx *= TABLE_TENNIS_CONSTANTS.BALL.AIR_DRAG;
+      simVz *= TABLE_TENNIS_CONSTANTS.BALL.AIR_DRAG;
+
+      simX += simVx * dt;
+      simY += simVy * dt;
+      simZ += simVz * dt;
+
+      // Check table bounce
+      if (prevY >= tableTopY + ballR && simY <= tableTopY + ballR) {
+        if (Math.abs(simX) <= tblW / 2 && Math.abs(simZ) <= tblL / 2) {
+          simY = tableTopY + ballR;
+          simVy = -simVy * TABLE_TENNIS_CONSTANTS.BALL.RESTITUTION_TABLE;
+          willBounceTable = true;
+          if (!bouncePoint) {
+            bouncePoint = new THREE.Vector3(simX, simY, simZ);
+          }
+        }
+      }
+
+      // Check if target Z plane reached
+      const reached = targetZ < 0 ? simZ <= targetZ : simZ >= targetZ;
+      if (reached) {
+        return {
+          interceptPoint: new THREE.Vector3(simX, Math.max(0.2, simY), targetZ),
+          timeToIntercept: totalTime,
+          willBounceTable,
+          bouncePoint
+        };
+      }
+
+      // If fallen beneath arena, break
+      if (simY < -2.0) {
+        break;
+      }
+    }
+
+    return {
+      interceptPoint: new THREE.Vector3(simX, Math.max(0.3, simY), targetZ),
+      timeToIntercept: totalTime,
+      willBounceTable,
+      bouncePoint
+    };
+  }
+
   public hitPaddle(
     hitter: Hitter,
     paddlePos: THREE.Vector3,
     swingSpeed = 1.0,
-    swingDirX = 0
+    swingDirX = 0,
+    targetLanding?: { x: number; z: number }
   ): boolean {
     if (this.state.state !== 'in_play' && this.state.state !== 'serving') {
       return false;
@@ -139,16 +227,35 @@ export class TableTennisPhysics {
       TABLE_TENNIS_CONSTANTS.PHYSICS.MAX_HIT_SPEED
     );
 
-    // Aim calculation: offset from paddle center creates angle
-    const paddleOffsetX = (this.state.position.x - paddlePos.x) / TABLE_TENNIS_CONSTANTS.PADDLE.RADIUS;
-    const vx = paddleOffsetX * 2.8 + swingDirX * 1.8;
+    if (targetLanding) {
+      // Intelligent tactical return aimed at targetLanding
+      const deltaZ = targetLanding.z - this.state.position.z;
+      const vz = dirZ * clampedSpeed;
+      const flightTime = Math.max(0.3, Math.abs(deltaZ / vz));
+      const vx = (targetLanding.x - this.state.position.x) / flightTime;
 
-    // Upward arc ensuring clearance over the net (0.55m)
-    const vy = 3.6 + Math.max(0, -this.state.velocity.y * 0.25);
-    const vz = dirZ * clampedSpeed;
+      // Net crossing clearance calculation:
+      const tNet = Math.max(0.1, Math.abs(this.state.position.z / vz));
+      const g = TABLE_TENNIS_CONSTANTS.BALL.GRAVITY;
+      // We want clearance over net top (0.55m) with safety margin (0.75m)
+      const vyRequiredForNet = (0.75 - this.state.position.y - 0.5 * g * tNet * tNet) / tNet;
+      // And landing on table (y = 0.13m) at flightTime
+      const vyRequiredForLanding = (0.13 - this.state.position.y - 0.5 * g * flightTime * flightTime) / flightTime;
 
-    this.state.velocity.set(vx, vy, vz);
-    this.state.spin.set(paddleOffsetX * 2.0, 0, 0);
+      const vy = Math.max(vyRequiredForNet, vyRequiredForLanding, 2.5);
+
+      this.state.velocity.set(vx, vy, vz);
+      this.state.spin.set((Math.random() - 0.5) * 2.0, 0, 0);
+    } else {
+      // Direct aim calculation based on paddle contact offset and swing
+      const paddleOffsetX = (this.state.position.x - paddlePos.x) / TABLE_TENNIS_CONSTANTS.PADDLE.RADIUS;
+      const vx = paddleOffsetX * 2.8 + swingDirX * 1.8;
+      const vy = 3.6 + Math.max(0, -this.state.velocity.y * 0.25);
+      const vz = dirZ * clampedSpeed;
+
+      this.state.velocity.set(vx, vy, vz);
+      this.state.spin.set(paddleOffsetX * 2.0, 0, 0);
+    }
 
     return true;
   }

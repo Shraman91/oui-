@@ -36,6 +36,17 @@ export class FruitNinjaGame implements Game {
       width: FRUIT_NINJA_CONSTANTS.CANVAS.WIDTH,
       height: FRUIT_NINJA_CONSTANTS.CANVAS.HEIGHT,
       backgroundColor: '#fdf2f8',
+      render: {
+        antialias: false,
+        pixelArt: true,
+        roundPixels: true,
+        powerPreference: 'high-performance',
+        batchSize: 4096
+      },
+      fps: {
+        target: 60,
+        smoothStep: true
+      },
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH

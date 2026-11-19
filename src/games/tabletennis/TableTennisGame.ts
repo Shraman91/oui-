@@ -232,8 +232,21 @@ export class TableTennisGame implements Game {
   }
 
   private executeAiServe(): void {
-    const targetX = (Math.random() - 0.5) * 2.2;
-    this.physics.executeServe('ai', targetX, 0.95);
+    const config = TABLE_TENNIS_CONSTANTS.AI[this.currentDifficulty];
+    let targetX = 0;
+
+    if (this.currentDifficulty === 'EASY') {
+      // Gentle center serve
+      targetX = (Math.random() - 0.5) * 1.2;
+    } else if (this.currentDifficulty === 'NORMAL') {
+      // Alternates left and right sides
+      targetX = (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8);
+    } else {
+      // Hard: Deceptive wide cross-court or sharp corner serve
+      targetX = (Math.random() > 0.5 ? 1 : -1) * (1.3 + Math.random() * 0.8);
+    }
+
+    this.physics.executeServe('ai', targetX, config.powerMult);
     this.scene?.spawnSparks(this.aiTarget, 0xf472b6, 8);
     this.updateHUD();
   }
@@ -304,41 +317,84 @@ export class TableTennisGame implements Game {
       this.aiReactionTimer += dt;
 
       if (this.aiReactionTimer >= config.reactionDelay) {
-        // Project ball X and Y to AI paddle Z plane (-4.8)
-        const timeToReach = Math.max(0.01, (ball.position.z - TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z) / -ball.velocity.z);
-        const predictedX = ball.position.x + ball.velocity.x * timeToReach;
-        const predictedY = Math.max(0.3, ball.position.y + ball.velocity.y * timeToReach);
+        // High-precision trajectory prediction with physics and bounce modeling
+        const prediction = this.physics.predictTrajectory(TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z);
 
-        const targetX = predictedX + this.aiErrorOffset.x;
-        const targetY = predictedY + this.aiErrorOffset.y;
+        let targetX = 0;
+        let targetY = 0.6;
 
-        const lerpSpeed = 9.0 * config.speedMult * dt;
+        if (prediction) {
+          targetX = prediction.interceptPoint.x + this.aiErrorOffset.x;
+          targetY = prediction.interceptPoint.y + this.aiErrorOffset.y;
+        } else {
+          // Fallback project
+          const timeToReach = Math.max(0.01, (ball.position.z - TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z) / -ball.velocity.z);
+          targetX = ball.position.x + ball.velocity.x * timeToReach + this.aiErrorOffset.x;
+          targetY = Math.max(0.35, ball.position.y + ball.velocity.y * timeToReach) + this.aiErrorOffset.y;
+        }
+
+        // Clamp AI reach to reasonable limits around the table
+        targetX = THREE.MathUtils.clamp(targetX, -TABLE_TENNIS_CONSTANTS.TABLE.WIDTH / 2 - 0.7, TABLE_TENNIS_CONSTANTS.TABLE.WIDTH / 2 + 0.7);
+        targetY = THREE.MathUtils.clamp(targetY, 0.15, 2.2);
+
+        const lerpSpeed = Math.min(1.0, 11.0 * config.speedMult * dt);
         this.aiTarget.x += (targetX - this.aiTarget.x) * lerpSpeed;
         this.aiTarget.y += (targetY - this.aiTarget.y) * lerpSpeed;
 
         // Check if ball is in AI hit zone
-        if (
-          Math.abs(ball.position.z - TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z) < 0.45 &&
-          Math.hypot(ball.position.x - this.aiTarget.x, ball.position.y - this.aiTarget.y) < 0.65
-        ) {
+        const distZ = Math.abs(ball.position.z - TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z);
+        const distXY = Math.hypot(ball.position.x - this.aiTarget.x, ball.position.y - this.aiTarget.y);
+
+        if (distZ < 0.48 && distXY < 0.70) {
           // Check miss chance
           const willMiss = Math.random() < config.missChance;
           if (!willMiss) {
-            const swingDirX = (Math.random() - 0.5) * 1.2;
-            const didHit = this.physics.hitPaddle('ai', this.aiTarget, 1.05 * config.speedMult, swingDirX);
+            // Intelligent tactical placement: counter the player's position
+            let landingX = 0;
+            const useCornerTactic = Math.random() < config.cornerTactics;
+
+            if (useCornerTactic) {
+              // If player is on left, drive right; if player on right, drive left
+              if (this.playerTarget.x < -0.3) {
+                landingX = 1.0 + Math.random() * 0.9; // Target right side
+              } else if (this.playerTarget.x > 0.3) {
+                landingX = -1.0 - Math.random() * 0.9; // Target left side
+              } else {
+                landingX = (Math.random() > 0.5 ? 1 : -1) * (1.1 + Math.random() * 0.7);
+              }
+            } else {
+              // Normal return near center
+              landingX = (Math.random() - 0.5) * 1.5;
+            }
+
+            // Target landing depth on player's side of the table (Z in [1.5, 3.8])
+            const landingZ = 1.8 + Math.random() * 1.8;
+
+            const didHit = this.physics.hitPaddle(
+              'ai',
+              this.aiTarget,
+              config.powerMult,
+              (landingX - this.aiTarget.x) * 0.4,
+              { x: landingX, z: landingZ }
+            );
+
             if (didHit) {
-              this.scene?.spawnSparks(this.aiTarget, 0xf472b6, 12);
+              this.scene?.spawnSparks(this.aiTarget, 0xf472b6, 10);
               this.aiReactionTimer = 0;
-              this.aiErrorOffset.set((Math.random() - 0.5) * config.trackingError, (Math.random() - 0.5) * 0.2);
+              // Reset error offset for next rally stroke
+              this.aiErrorOffset.set(
+                (Math.random() - 0.5) * config.trackingError,
+                (Math.random() - 0.5) * (config.trackingError * 0.5)
+              );
             }
           }
         }
       }
     } else {
-      // Return gently to center ready stance
+      // Ball moving toward player: return gently to center ready stance
       this.aiReactionTimer = 0;
-      this.aiTarget.x += (0 - this.aiTarget.x) * 4.0 * dt;
-      this.aiTarget.y += (0.6 - this.aiTarget.y) * 4.0 * dt;
+      this.aiTarget.x += (0 - this.aiTarget.x) * 4.5 * dt;
+      this.aiTarget.y += (0.65 - this.aiTarget.y) * 4.5 * dt;
     }
   }
 

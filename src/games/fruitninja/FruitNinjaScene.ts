@@ -64,6 +64,7 @@ export class FruitNinjaScene extends Phaser.Scene {
   private activeFruits: ActiveFruit[] = [];
   private splitHalves: SplitHalf[] = [];
   private particles: JuiceDroplet[] = [];
+  private dropletPool: Phaser.GameObjects.Sprite[] = [];
 
   // Blade Trail
   private bladeTrail!: BladeTrail;
@@ -207,7 +208,8 @@ export class FruitNinjaScene extends Phaser.Scene {
     this.splitHalves = [];
 
     for (const p of this.particles) {
-      p.sprite.destroy();
+      p.sprite.setVisible(false);
+      this.dropletPool.push(p.sprite);
     }
     this.particles = [];
 
@@ -427,6 +429,21 @@ export class FruitNinjaScene extends Phaser.Scene {
     });
   }
 
+  private getDropletSprite(x: number, y: number, textureKey: string, tint: number, depth: number): Phaser.GameObjects.Sprite {
+    let sprite = this.dropletPool.pop();
+    if (!sprite) {
+      sprite = this.add.sprite(x, y, textureKey);
+    } else {
+      sprite.setTexture(textureKey);
+      sprite.setPosition(x, y);
+      sprite.setVisible(true);
+    }
+    sprite.setTint(tint);
+    sprite.setDepth(depth);
+    sprite.setAlpha(1);
+    return sprite;
+  }
+
   private createJuiceSplatter(x: number, y: number, fruit: FruitConfig, sliceAngle: number): void {
     const count = 16;
     const juiceTint = parseInt(fruit.juiceColor.replace('#', ''), 16);
@@ -438,9 +455,7 @@ export class FruitNinjaScene extends Phaser.Scene {
       const speed = 140 + Math.random() * 320;
 
       const dropletType = Math.floor(Math.random() * 3);
-      const pSprite = this.add.sprite(x, y, `droplet_${dropletType}`);
-      pSprite.setTint(juiceTint);
-      pSprite.setDepth(25);
+      const pSprite = this.getDropletSprite(x, y, `droplet_${dropletType}`, juiceTint, 25);
 
       this.particles.push({
         sprite: pSprite,
@@ -464,9 +479,7 @@ export class FruitNinjaScene extends Phaser.Scene {
       const angle = Math.random() * Math.PI * 2;
       const speed = 180 + Math.random() * 420;
 
-      const pSprite = this.add.sprite(x, y, 'droplet_1');
-      pSprite.setTint(0x262024);
-      pSprite.setDepth(50);
+      const pSprite = this.getDropletSprite(x, y, 'droplet_1', 0x262024, 50);
 
       this.particles.push({
         sprite: pSprite,
@@ -712,7 +725,8 @@ export class FruitNinjaScene extends Phaser.Scene {
       p.sprite.setAlpha(p.alpha);
 
       if (p.lifetime >= p.maxLifetime) {
-        p.sprite.destroy();
+        p.sprite.setVisible(false);
+        this.dropletPool.push(p.sprite);
         this.particles.splice(i, 1);
       }
     }
@@ -871,6 +885,11 @@ export class FruitNinjaScene extends Phaser.Scene {
       p.sprite.destroy();
     }
     this.particles = [];
+
+    for (const s of this.dropletPool) {
+      s.destroy();
+    }
+    this.dropletPool = [];
 
     this.gameOverContainer?.destroy();
   }

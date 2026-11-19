@@ -36,6 +36,17 @@ export class SpaceFighterGame implements Game {
       width: SPACE_FIGHTER_CONSTANTS.CANVAS.WIDTH,
       height: SPACE_FIGHTER_CONSTANTS.CANVAS.HEIGHT,
       backgroundColor: '#181124',
+      render: {
+        antialias: false,
+        pixelArt: true,
+        roundPixels: true,
+        powerPreference: 'high-performance',
+        batchSize: 4096
+      },
+      fps: {
+        target: 60,
+        smoothStep: true
+      },
       scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH

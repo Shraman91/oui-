@@ -10,6 +10,7 @@ export interface TrailPoint {
 export class BladeTrail {
   private graphics: Phaser.GameObjects.Graphics;
   private points: TrailPoint[] = [];
+  private splineBuffer: TrailPoint[] = [];
 
   constructor(scene: Phaser.Scene) {
     this.graphics = scene.add.graphics();
@@ -21,7 +22,7 @@ export class BladeTrail {
       const last = this.points[this.points.length - 1];
       const dist = Math.hypot(x - last.x, y - last.y);
       // Avoid clustering points that are too close together
-      if (dist < 2.5) return;
+      if (dist < 3.0) return;
     }
 
     this.points.push({ x, y, time });
@@ -29,9 +30,12 @@ export class BladeTrail {
 
   public update(currentTime: number): void {
     const lifetime = FRUIT_NINJA_CONSTANTS.BLADE.TRAIL_LIFETIME_SECONDS;
-    this.points = this.points.filter((p) => currentTime - p.time < lifetime);
+    // In-place expiration without array re-allocation
+    while (this.points.length > 0 && currentTime - this.points[0].time >= lifetime) {
+      this.points.shift();
+    }
 
-    this.render(currentTime);
+    this.render();
   }
 
   public getPoints(): readonly TrailPoint[] {
@@ -59,14 +63,20 @@ export class BladeTrail {
   }
 
   /**
-   * Generates smoothly curved spline points through raw input points.
+   * Generates smoothly curved spline points reusing splineBuffer.
    */
   private generateSplinePoints(): TrailPoint[] {
     const pts = this.points;
-    if (pts.length < 3) return [...pts];
+    this.splineBuffer.length = 0;
 
-    const result: TrailPoint[] = [];
-    const stepsPerSegment = 3;
+    if (pts.length < 3) {
+      for (let i = 0; i < pts.length; i++) {
+        this.splineBuffer.push(pts[i]);
+      }
+      return this.splineBuffer;
+    }
+
+    const stepsPerSegment = 2;
 
     for (let i = 0; i < pts.length - 1; i++) {
       const p0 = pts[Math.max(0, i - 1)];
@@ -79,81 +89,50 @@ export class BladeTrail {
         const x = this.catmullRom(p0.x, p1.x, p2.x, p3.x, t);
         const y = this.catmullRom(p0.y, p1.y, p2.y, p3.y, t);
         const time = p1.time + (p2.time - p1.time) * t;
-        result.push({ x, y, time });
+        this.splineBuffer.push({ x, y, time });
       }
     }
 
-    result.push(pts[pts.length - 1]);
-    return result;
+    this.splineBuffer.push(pts[pts.length - 1]);
+    return this.splineBuffer;
   }
 
-  private render(currentTime: number): void {
+  private render(): void {
     this.graphics.clear();
 
     if (this.points.length < 2) return;
 
-    const lifetime = FRUIT_NINJA_CONSTANTS.BLADE.TRAIL_LIFETIME_SECONDS;
     const splinePoints = this.generateSplinePoints();
-
     if (splinePoints.length < 2) return;
 
     const baseWidth = FRUIT_NINJA_CONSTANTS.BLADE.BASE_WIDTH;
 
-    // Pass 1: Outer glowing aura (soft baby pink)
-    for (let i = 0; i < splinePoints.length - 1; i++) {
-      const p1 = splinePoints[i];
-      const p2 = splinePoints[i + 1];
-
-      const age = Math.min(1, Math.max(0, (currentTime - p2.time) / lifetime));
-      const life = 1 - age;
-
-      // Bell-curved taper: sharp at tip, thick in middle, tapering at tail
-      const taper = Math.sin(life * Math.PI * 0.5);
-      const width = Math.max(1, taper * (baseWidth + 5));
-      const alpha = Math.max(0, life * 0.4);
-
-      this.graphics.lineStyle(width, 0xf472b6, alpha);
-      this.graphics.beginPath();
-      this.graphics.moveTo(p1.x, p1.y);
-      this.graphics.lineTo(p2.x, p2.y);
-      this.graphics.strokePath();
+    // Batched Pass 1: Outer glowing aura (soft baby pink)
+    this.graphics.lineStyle(baseWidth + 6, 0xf472b6, 0.4);
+    this.graphics.beginPath();
+    this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+    for (let i = 1; i < splinePoints.length; i++) {
+      this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
     }
+    this.graphics.strokePath();
 
-    // Pass 2: Vibrant mid blade
-    for (let i = 0; i < splinePoints.length - 1; i++) {
-      const p1 = splinePoints[i];
-      const p2 = splinePoints[i + 1];
-
-      const age = Math.min(1, Math.max(0, (currentTime - p2.time) / lifetime));
-      const life = 1 - age;
-      const taper = Math.sin(life * Math.PI * 0.5);
-      const width = Math.max(1, taper * baseWidth);
-      const alpha = Math.max(0, life * 0.85);
-
-      this.graphics.lineStyle(width, 0xec4899, alpha);
-      this.graphics.beginPath();
-      this.graphics.moveTo(p1.x, p1.y);
-      this.graphics.lineTo(p2.x, p2.y);
-      this.graphics.strokePath();
+    // Batched Pass 2: Vibrant mid blade
+    this.graphics.lineStyle(baseWidth, 0xec4899, 0.85);
+    this.graphics.beginPath();
+    this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+    for (let i = 1; i < splinePoints.length; i++) {
+      this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
     }
+    this.graphics.strokePath();
 
-    // Pass 3: Gleaming razor-sharp white core
-    for (let i = 0; i < splinePoints.length - 1; i++) {
-      const p1 = splinePoints[i];
-      const p2 = splinePoints[i + 1];
-
-      const age = Math.min(1, Math.max(0, (currentTime - p2.time) / lifetime));
-      const life = 1 - age;
-      const taper = Math.sin(life * Math.PI * 0.5);
-      const width = Math.max(0.75, taper * (baseWidth * 0.4));
-      const alpha = Math.max(0, life * 0.95);
-
-      this.graphics.lineStyle(width, 0xffffff, alpha);
-      this.graphics.beginPath();
-      this.graphics.moveTo(p1.x, p1.y);
-      this.graphics.lineTo(p2.x, p2.y);
-      this.graphics.strokePath();
+    // Batched Pass 3: Gleaming razor-sharp white core
+    this.graphics.lineStyle(Math.max(1, baseWidth * 0.35), 0xffffff, 0.95);
+    this.graphics.beginPath();
+    this.graphics.moveTo(splinePoints[0].x, splinePoints[0].y);
+    for (let i = 1; i < splinePoints.length; i++) {
+      this.graphics.lineTo(splinePoints[i].x, splinePoints[i].y);
     }
+    this.graphics.strokePath();
 
     // Pass 4: Blade Tip Gleam Spark
     const tip = splinePoints[splinePoints.length - 1];
@@ -173,5 +152,6 @@ export class BladeTrail {
   public destroy(): void {
     this.graphics.destroy();
     this.points = [];
+    this.splineBuffer = [];
   }
 }

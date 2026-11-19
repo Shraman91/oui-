@@ -38,22 +38,28 @@ export const TABLE_TENNIS_CONSTANTS = {
   },
   AI: {
     EASY: {
-      reactionDelay: 0.28,
-      trackingError: 0.55,
-      speedMult: 0.85,
-      missChance: 0.18
+      reactionDelay: 0.20,
+      trackingError: 0.35,
+      speedMult: 0.95,
+      missChance: 0.10,
+      powerMult: 0.88,
+      cornerTactics: 0.25
     },
     NORMAL: {
-      reactionDelay: 0.16,
-      trackingError: 0.30,
-      speedMult: 1.0,
-      missChance: 0.08
+      reactionDelay: 0.10,
+      trackingError: 0.14,
+      speedMult: 1.15,
+      missChance: 0.03,
+      powerMult: 1.05,
+      cornerTactics: 0.75
     },
     HARD: {
-      reactionDelay: 0.06,
-      trackingError: 0.12,
-      speedMult: 1.25,
-      missChance: 0.02
+      reactionDelay: 0.03,
+      trackingError: 0.03,
+      speedMult: 1.45,
+      missChance: 0.005,
+      powerMult: 1.25,
+      cornerTactics: 0.96
     }
   }
 };

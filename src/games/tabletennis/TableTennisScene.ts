@@ -12,7 +12,12 @@ export class TableTennisScene {
   private ballMesh!: THREE.Mesh;
   private playerPaddleGroup!: THREE.Group;
   private aiPaddleGroup!: THREE.Group;
-  private particles: { mesh: THREE.Mesh; vx: number; vy: number; vz: number; life: number }[] = [];
+
+  // Optimized Particle Spark Pool (Zero garbage collection during rallies)
+  private sparkGeom: THREE.BoxGeometry = new THREE.BoxGeometry(0.06, 0.06, 0.06);
+  private sparkMaterials: Map<number, THREE.MeshBasicMaterial> = new Map();
+  private particlePool: THREE.Mesh[] = [];
+  private activeParticles: { mesh: THREE.Mesh; vx: number; vy: number; vz: number; life: number; maxLife: number }[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -27,12 +32,17 @@ export class TableTennisScene {
     this.camera.position.set(0, 3.4, 8.4);
     this.camera.lookAt(0, 0.4, 0);
 
-    // 3. Renderer with antialiasing and soft shadow map
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    // 3. High-performance Renderer with powerPreference and capped pixel ratio
+    this.renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      powerPreference: 'high-performance',
+      precision: 'highp'
+    });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.container.appendChild(this.renderer.domElement);
 
     // 4. Lighting
@@ -43,6 +53,7 @@ export class TableTennisScene {
     this.buildBall();
     this.buildPaddles();
     this.buildFloor();
+    this.initParticlePool();
 
     window.addEventListener('resize', this.onResizeBound);
   }
@@ -63,20 +74,40 @@ export class TableTennisScene {
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
     dirLight.position.set(4, 9, 5);
     dirLight.castShadow = true;
-    dirLight.shadow.mapSize.width = 1024;
-    dirLight.shadow.mapSize.height = 1024;
+    dirLight.shadow.mapSize.width = 512;
+    dirLight.shadow.mapSize.height = 512;
     dirLight.shadow.camera.near = 1;
     dirLight.shadow.camera.far = 25;
     dirLight.shadow.camera.left = -6;
     dirLight.shadow.camera.right = 6;
     dirLight.shadow.camera.top = 8;
     dirLight.shadow.camera.bottom = -8;
-    dirLight.shadow.bias = -0.001;
+    dirLight.shadow.bias = -0.0015;
     this.scene.add(dirLight);
 
     const fillLight = new THREE.DirectionalLight(0xe0f2fe, 0.35);
     fillLight.position.set(-5, 6, -6);
     this.scene.add(fillLight);
+  }
+
+  private initParticlePool(): void {
+    // Pre-allocate 45 reusable particle meshes in the scene graph
+    const defaultMat = this.getMaterial(0xf472b6);
+    for (let i = 0; i < 45; i++) {
+      const mesh = new THREE.Mesh(this.sparkGeom, defaultMat);
+      mesh.visible = false;
+      this.scene.add(mesh);
+      this.particlePool.push(mesh);
+    }
+  }
+
+  private getMaterial(color: number): THREE.MeshBasicMaterial {
+    let mat = this.sparkMaterials.get(color);
+    if (!mat) {
+      mat = new THREE.MeshBasicMaterial({ color });
+      this.sparkMaterials.set(color, mat);
+    }
+    return mat;
   }
 
   private buildTableAndNet(): void {
@@ -277,44 +308,54 @@ export class TableTennisScene {
     this.updateParticles(dt);
   }
 
-  public spawnSparks(pos: THREE.Vector3, color = 0xf472b6, count = 10): void {
-    const geom = new THREE.BoxGeometry(0.06, 0.06, 0.06);
-    const mat = new THREE.MeshBasicMaterial({ color });
+  public spawnSparks(pos: THREE.Vector3, color = 0xf472b6, count = 8): void {
+    const mat = this.getMaterial(color);
 
     for (let i = 0; i < count; i++) {
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.position.copy(pos);
-      this.scene.add(mesh);
+      let mesh = this.particlePool.pop();
+      if (!mesh) {
+        mesh = new THREE.Mesh(this.sparkGeom, mat);
+        this.scene.add(mesh);
+      } else {
+        mesh.material = mat;
+      }
 
-      const speed = 2.0 + Math.random() * 3.5;
+      mesh.position.copy(pos);
+      mesh.scale.set(1, 1, 1);
+      mesh.visible = true;
+
+      const speed = 2.2 + Math.random() * 3.6;
       const angle = Math.random() * Math.PI * 2;
-      this.particles.push({
+      const life = 0.3 + Math.random() * 0.2;
+
+      this.activeParticles.push({
         mesh,
         vx: Math.cos(angle) * speed,
-        vy: (Math.random() + 0.4) * speed,
+        vy: (Math.random() + 0.5) * speed,
         vz: Math.sin(angle) * speed,
-        life: 0.35 + Math.random() * 0.2
+        life,
+        maxLife: life
       });
     }
   }
 
   private updateParticles(dt: number): void {
-    for (let i = this.particles.length - 1; i >= 0; i--) {
-      const p = this.particles[i];
+    for (let i = this.activeParticles.length - 1; i >= 0; i--) {
+      const p = this.activeParticles[i];
       p.life -= dt;
 
-      p.vy -= 9.8 * dt; // gravity
+      p.vy -= 12.0 * dt; // gravity
       p.mesh.position.x += p.vx * dt;
       p.mesh.position.y += p.vy * dt;
       p.mesh.position.z += p.vz * dt;
 
-      const s = Math.max(0.01, p.life * 2.5);
+      const s = Math.max(0.01, (p.life / p.maxLife) * 1.5);
       p.mesh.scale.set(s, s, s);
 
       if (p.life <= 0) {
-        this.scene.remove(p.mesh);
-        p.mesh.geometry.dispose();
-        this.particles.splice(i, 1);
+        p.mesh.visible = false;
+        this.particlePool.push(p.mesh);
+        this.activeParticles.splice(i, 1);
       }
     }
   }
@@ -326,11 +367,21 @@ export class TableTennisScene {
   public destroy(): void {
     window.removeEventListener('resize', this.onResizeBound);
 
-    for (const p of this.particles) {
+    for (const p of this.activeParticles) {
       this.scene.remove(p.mesh);
-      p.mesh.geometry.dispose();
     }
-    this.particles = [];
+    this.activeParticles = [];
+
+    for (const mesh of this.particlePool) {
+      this.scene.remove(mesh);
+    }
+    this.particlePool = [];
+
+    this.sparkGeom.dispose();
+    for (const mat of this.sparkMaterials.values()) {
+      mat.dispose();
+    }
+    this.sparkMaterials.clear();
 
     this.renderer.dispose();
     if (this.renderer.domElement.parentElement) {
