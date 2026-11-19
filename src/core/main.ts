@@ -1,5 +1,6 @@
 import { InputManager } from '../input/InputManager';
 import { MouseProvider } from '../input/providers/MouseProvider';
+import { PhoneProvider } from '../input/providers/PhoneProvider';
 import { Cursor } from '../input/Cursor';
 import { RelayClient } from '../input/network/RelayClient';
 import { SensorBar } from '../input/sensorbar/SensorBar';
@@ -19,6 +20,7 @@ class OuiConsoleApp {
   private appElement: HTMLElement;
   private inputManager: InputManager;
   private mouseProvider: MouseProvider;
+  private phoneProvider: PhoneProvider;
   private cursor: Cursor;
   private relayClient: RelayClient;
   private sensorBar: SensorBar;
@@ -52,7 +54,28 @@ class OuiConsoleApp {
     this.sensorBar = new SensorBar();
     this.relayClient = new RelayClient({ autoConnect: true });
 
-    // 4. Initialize Modals
+    // 4. Initialize Phone Provider & Auto-Switch
+    this.phoneProvider = new PhoneProvider(this.inputManager, this.sensorBar, this.relayClient);
+    this.inputManager.registerProvider(this.phoneProvider);
+
+    // Auto-switch to Phone when remote connects, and fall back to Mouse when disconnected
+    this.relayClient.onRemoteConnected((remoteId) => {
+      if (remoteId === 1) {
+        this.inputManager.setActiveProvider('phone');
+        this.menu?.updateProviderBadge();
+        console.log('[oui] Remote 1 connected -> Active controller switched to Phone');
+      }
+    });
+
+    this.relayClient.onRemoteDisconnected((remoteId) => {
+      if (remoteId === 1) {
+        this.inputManager.setActiveProvider('mouse');
+        this.menu?.updateProviderBadge();
+        console.log('[oui] Remote 1 disconnected -> Controller fell back to Mouse');
+      }
+    });
+
+    // 5. Initialize Modals
     this.calibrationModal = new CalibrationModal({
       container: this.appElement,
       relayClient: this.relayClient,
