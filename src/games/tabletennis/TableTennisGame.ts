@@ -232,22 +232,26 @@ export class TableTennisGame implements Game {
   }
 
   private executeAiServe(): void {
+    const ball = this.physics.getState();
+    // Position AI paddle right behind the serve ball
+    this.aiTarget.set(ball.position.x, ball.position.y, -4.5);
+
     const config = TABLE_TENNIS_CONSTANTS.AI[this.currentDifficulty];
     let targetX = 0;
 
     if (this.currentDifficulty === 'EASY') {
       // Gentle center serve
-      targetX = (Math.random() - 0.5) * 1.2;
+      targetX = (Math.random() - 0.5) * 1.0;
     } else if (this.currentDifficulty === 'NORMAL') {
       // Alternates left and right sides
-      targetX = (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.8);
+      targetX = (Math.random() > 0.5 ? 1 : -1) * (0.6 + Math.random() * 0.7);
     } else {
-      // Hard: Deceptive wide cross-court or sharp corner serve
-      targetX = (Math.random() > 0.5 ? 1 : -1) * (1.3 + Math.random() * 0.8);
+      // Hard: Deceptive wide cross-court serve
+      targetX = (Math.random() > 0.5 ? 1 : -1) * (1.0 + Math.random() * 0.7);
     }
 
     this.physics.executeServe('ai', targetX, config.powerMult);
-    this.scene?.spawnSparks(this.aiTarget, 0xf472b6, 8);
+    this.scene?.spawnSparks(this.aiTarget, 0xf472b6, 10);
     this.updateHUD();
   }
 
@@ -263,15 +267,18 @@ export class TableTennisGame implements Game {
     this.playerTarget.y = 0.2 + (1.0 - state.pointer.y) * 2.2;
     this.playerTarget.z = TABLE_TENNIS_CONSTANTS.PADDLE.PLAYER_Z;
 
-    // Auto-deflection check when paddle is placed directly in ball path
+    // High-precision continuous collision detection for player paddle
     const ball = this.physics.getState();
-    if (
-      ball.state === 'in_play' &&
-      ball.velocity.z > 0 &&
-      Math.abs(ball.position.z - this.playerTarget.z) < 0.35 &&
-      Math.hypot(ball.position.x - this.playerTarget.x, ball.position.y - this.playerTarget.y) < 0.45
-    ) {
-      this.handlePlayerSwing(0.9, (ball.position.x - this.playerTarget.x) * 1.5);
+    if (ball.state === 'in_play' && ball.velocity.z > 0) {
+      const pZ = this.playerTarget.z;
+      const bZ = ball.position.z;
+      // In front of paddle or crossing plane
+      if (bZ >= pZ - 1.15 && bZ <= pZ + 0.55) {
+        const distXY = Math.hypot(ball.position.x - this.playerTarget.x, ball.position.y - this.playerTarget.y);
+        if (distXY <= 0.88) {
+          this.handlePlayerSwing(1.05, (ball.position.x - this.playerTarget.x) * 1.5);
+        }
+      }
     }
 
     // 2. Handle Point Cooldown Transition
@@ -341,11 +348,11 @@ export class TableTennisGame implements Game {
         this.aiTarget.x += (targetX - this.aiTarget.x) * lerpSpeed;
         this.aiTarget.y += (targetY - this.aiTarget.y) * lerpSpeed;
 
-        // Check if ball is in AI hit zone
+        // Wide continuous collision detection for AI paddle
         const distZ = Math.abs(ball.position.z - TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z);
         const distXY = Math.hypot(ball.position.x - this.aiTarget.x, ball.position.y - this.aiTarget.y);
 
-        if (distZ < 0.48 && distXY < 0.70) {
+        if (distZ < 0.90 && distXY < 0.88) {
           // Check miss chance
           const willMiss = Math.random() < config.missChance;
           if (!willMiss) {
@@ -390,6 +397,11 @@ export class TableTennisGame implements Game {
           }
         }
       }
+    } else if (ball.state === 'serving' && ball.server === 'ai') {
+      // AI waiting to serve: align paddle right behind the ball
+      this.aiReactionTimer = 0;
+      this.aiTarget.x += (ball.position.x - this.aiTarget.x) * 6.0 * dt;
+      this.aiTarget.y += (ball.position.y - this.aiTarget.y) * 6.0 * dt;
     } else {
       // Ball moving toward player: return gently to center ready stance
       this.aiReactionTimer = 0;

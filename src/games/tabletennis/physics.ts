@@ -15,6 +15,7 @@ export interface BallPhysicsState {
   bouncesAiSide: number;
   hasHitNet: boolean;
   timeInPlay: number;
+  isServePhase: boolean;
 }
 
 export interface CollisionEvent {
@@ -45,7 +46,8 @@ export class TableTennisPhysics {
       bouncesPlayerSide: 0,
       bouncesAiSide: 0,
       hasHitNet: false,
-      timeInPlay: 0
+      timeInPlay: 0,
+      isServePhase: true
     };
   }
 
@@ -65,13 +67,14 @@ export class TableTennisPhysics {
     this.state.bouncesAiSide = 0;
     this.state.hasHitNet = false;
     this.state.timeInPlay = 0;
+    this.state.isServePhase = true;
     this.state.velocity.set(0, 0, 0);
     this.state.spin.set(0, 0, 0);
 
     const isPlayer = this.state.server === 'player';
-    const sz = isPlayer ? 4.3 : -4.3;
-    const sy = TABLE_TENNIS_CONSTANTS.TABLE.SURFACE_Y + 0.65;
-    this.state.position.set(0.4 * (isPlayer ? 1 : -1), sy, sz);
+    const sz = isPlayer ? 4.2 : -4.2;
+    const sy = TABLE_TENNIS_CONSTANTS.TABLE.SURFACE_Y + 0.70;
+    this.state.position.set(0.3 * (isPlayer ? 1 : -1), sy, sz);
     this.prevPosition.copy(this.state.position);
   }
 
@@ -80,18 +83,20 @@ export class TableTennisPhysics {
 
     this.state.state = 'in_play';
     this.state.lastHitter = hitter;
+    this.state.isServePhase = true;
     this.state.bouncesPlayerSide = 0;
     this.state.bouncesAiSide = 0;
     this.state.hasHitNet = false;
+    this.state.timeInPlay = 0;
 
     const isPlayer = hitter === 'player';
     const dirZ = isPlayer ? -1 : 1;
     const speed = TABLE_TENNIS_CONSTANTS.PHYSICS.BASE_SERVE_SPEED * speedMult;
 
-    // Arc forward and bounce first on server's table, then cross net
+    // Firm forward and downward angle ensuring initial bounce on server table at |z| ~ 2.5m
     this.state.velocity.set(
-      (targetX - this.state.position.x) * 0.9,
-      1.8,
+      (targetX - this.state.position.x) * 0.75,
+      -1.4,
       dirZ * speed
     );
   }
@@ -188,19 +193,16 @@ export class TableTennisPhysics {
     }
 
     const isPlayer = hitter === 'player';
-    const hitZ = isPlayer ? TABLE_TENNIS_CONSTANTS.PADDLE.PLAYER_Z : TABLE_TENNIS_CONSTANTS.PADDLE.AI_Z;
+    const hitZ = paddlePos.z;
 
-    // Check hit range distance
+    // Generous continuous hit range in Z (up to 1.2m window) and XY (up to 0.95m radius)
     const dz = Math.abs(this.state.position.z - hitZ);
     const dxy = Math.hypot(
       this.state.position.x - paddlePos.x,
       this.state.position.y - paddlePos.y
     );
 
-    if (
-      dz > TABLE_TENNIS_CONSTANTS.PADDLE.HIT_RANGE_Z ||
-      dxy > TABLE_TENNIS_CONSTANTS.PADDLE.HIT_RANGE_XY
-    ) {
+    if (dz > 1.25 || dxy > 0.95) {
       return false;
     }
 
@@ -216,9 +218,18 @@ export class TableTennisPhysics {
 
     // Execute standard hit
     this.state.lastHitter = hitter;
+    this.state.isServePhase = false;
     this.state.bouncesPlayerSide = 0;
     this.state.bouncesAiSide = 0;
     this.state.hasHitNet = false;
+
+    // Place ball cleanly in front of paddle to eliminate multiple frames of overlap
+    if (isPlayer) {
+      this.state.position.z = Math.min(this.state.position.z, hitZ - 0.25);
+    } else {
+      this.state.position.z = Math.max(this.state.position.z, hitZ + 0.25);
+    }
+    this.prevPosition.copy(this.state.position);
 
     const dirZ = isPlayer ? -1 : 1;
     const clampedSpeed = THREE.MathUtils.clamp(
@@ -308,6 +319,11 @@ export class TableTennisPhysics {
           type: 'net_hit',
           position: this.state.position.clone()
         });
+      } else if (this.state.position.y > tableTopY + netH) {
+        // Cleared over net cleanly
+        if (this.state.isServePhase) {
+          this.state.isServePhase = false;
+        }
       }
     }
 
@@ -322,47 +338,80 @@ export class TableTennisPhysics {
       if (inX && Math.abs(z) <= tblL / 2) {
         // Table hit!
         this.state.position.y = tableTopY + ballR;
-        this.state.velocity.y =
-          -this.state.velocity.y * TABLE_TENNIS_CONSTANTS.BALL.RESTITUTION_TABLE;
-
         const isPlayerSide = z > 0;
 
-        if (isPlayerSide) {
-          this.state.bouncesPlayerSide++;
-          onEvent?.({
-            type: 'bounce_player',
-            position: this.state.position.clone()
-          });
+        if (this.state.isServePhase) {
+          // Serve phase: calibrate upward bounce arc (4.6 m/s) ensuring clean clearance over net
+          this.state.velocity.y = 4.6;
 
-          // Check for 2nd bounce on player's side => AI point!
-          if (this.state.bouncesPlayerSide >= 2) {
-            this.state.state = 'point_awarded';
-            return 'ai';
-          }
+          if (isPlayerSide) {
+            this.state.bouncesPlayerSide++;
+            onEvent?.({
+              type: 'bounce_player',
+              position: this.state.position.clone()
+            });
 
-          // If player just hit it and it bounced on player's own side during normal rally (not serving) => point to AI
-          if (this.state.lastHitter === 'player' && this.state.timeInPlay > 0.4) {
-            this.state.state = 'point_awarded';
-            return 'ai';
+            // If player was serving and bounced twice on player side before crossing net => Fault!
+            if (this.state.server === 'player' && this.state.bouncesPlayerSide >= 2) {
+              this.state.state = 'point_awarded';
+              return 'ai';
+            }
+          } else {
+            // AI side
+            this.state.bouncesAiSide++;
+            onEvent?.({
+              type: 'bounce_ai',
+              position: this.state.position.clone()
+            });
+
+            // If AI was serving and bounced twice on AI side before crossing net => Fault!
+            if (this.state.server === 'ai' && this.state.bouncesAiSide >= 2) {
+              this.state.state = 'point_awarded';
+              return 'player';
+            }
           }
         } else {
-          // AI side
-          this.state.bouncesAiSide++;
-          onEvent?.({
-            type: 'bounce_ai',
-            position: this.state.position.clone()
-          });
+          // Regular rally after crossing net
+          this.state.velocity.y =
+            -this.state.velocity.y * TABLE_TENNIS_CONSTANTS.BALL.RESTITUTION_TABLE;
 
-          // 2nd bounce on AI side => Player point!
-          if (this.state.bouncesAiSide >= 2) {
-            this.state.state = 'point_awarded';
-            return 'player';
-          }
+          if (isPlayerSide) {
+            this.state.bouncesPlayerSide++;
+            onEvent?.({
+              type: 'bounce_player',
+              position: this.state.position.clone()
+            });
 
-          // If AI just hit it and it bounced on AI's own side during rally => point to Player
-          if (this.state.lastHitter === 'ai' && this.state.timeInPlay > 0.4) {
-            this.state.state = 'point_awarded';
-            return 'player';
+            // Check for 2nd bounce on player's side => AI point!
+            if (this.state.bouncesPlayerSide >= 2) {
+              this.state.state = 'point_awarded';
+              return 'ai';
+            }
+
+            // If player just hit it and it bounced on player's own side during rally => Fault!
+            if (this.state.lastHitter === 'player') {
+              this.state.state = 'point_awarded';
+              return 'ai';
+            }
+          } else {
+            // AI side
+            this.state.bouncesAiSide++;
+            onEvent?.({
+              type: 'bounce_ai',
+              position: this.state.position.clone()
+            });
+
+            // 2nd bounce on AI side => Player point!
+            if (this.state.bouncesAiSide >= 2) {
+              this.state.state = 'point_awarded';
+              return 'player';
+            }
+
+            // If AI just hit it and it bounced on AI's own side during rally => Fault!
+            if (this.state.lastHitter === 'ai') {
+              this.state.state = 'point_awarded';
+              return 'player';
+            }
           }
         }
       }

@@ -521,7 +521,7 @@ export class SpaceFighterScene extends Phaser.Scene {
     // 2. Player Bullets vs Boss
     if (this.boss && this.boss.active) {
       for (const b of playerBullets) {
-        if (!b.active) continue;
+        if (!b.active || !this.boss || !this.boss.active) break;
 
         const distSq = (b.x - this.boss.x) ** 2 + (b.y - this.boss.y) ** 2;
         const hitRadius = b.radius + this.boss.radius;
@@ -587,21 +587,25 @@ export class SpaceFighterScene extends Phaser.Scene {
   }
 
   private damageBoss(dmg: number): void {
-    if (!this.boss) return;
+    if (!this.boss || !this.boss.active) return;
 
     this.boss.health -= dmg;
     this.updateBossHealthBar();
 
-    // Damage flash
-    this.boss.sprite.setTint(0xffffff);
-    this.time.delayedCall(45, () => {
-      if (this.boss) {
-        this.boss.sprite.clearTint();
-      }
-    });
-
     if (this.boss.health <= 0) {
       this.defeatBoss();
+      return;
+    }
+
+    // Damage flash only if boss is still alive
+    const sprite = this.boss.sprite;
+    if (sprite && sprite.active) {
+      sprite.setTint(0xffffff);
+      this.time.delayedCall(45, () => {
+        if (this.boss && this.boss.active && this.boss.sprite && this.boss.sprite.active) {
+          this.boss.sprite.clearTint();
+        }
+      });
     }
   }
 
@@ -611,10 +615,19 @@ export class SpaceFighterScene extends Phaser.Scene {
     const bx = this.boss.x;
     const by = this.boss.y;
     this.boss.active = false;
-    this.boss.sprite.destroy();
+
+    // Kill any active tweens on boss or its sprite before destroying
+    this.tweens.killTweensOf(this.boss);
+    if (this.boss.sprite) {
+      this.tweens.killTweensOf(this.boss.sprite);
+      this.boss.sprite.destroy();
+    }
     this.boss = null;
     this.bossHealthContainer?.destroy();
     this.bossHealthContainer = undefined;
+
+    // Clear active enemy bullets so player isn't hit post-boss
+    this.bulletPool.clearEnemyBullets();
 
     // Massive explosion sequence
     this.cameras.main.shake(600, 0.03);
@@ -629,7 +642,9 @@ export class SpaceFighterScene extends Phaser.Scene {
     this.showScorePopup(bx, by, `+${pts}`, '#f43f5e', 28);
     this.updateHUD();
 
+    this.isInterWave = true;
     this.showBanner('BOSS DESTROYED!', '#4ade80', () => {
+      this.isInterWave = false;
       this.startWave(this.currentWave + 1);
     });
   }

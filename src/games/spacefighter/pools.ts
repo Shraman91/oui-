@@ -149,6 +149,10 @@ export class BulletPool {
     for (const b of this.enemyBullets) this.recycle(b);
   }
 
+  public clearEnemyBullets(): void {
+    for (const b of this.enemyBullets) this.recycle(b);
+  }
+
   public destroy(): void {
     for (const b of this.playerBullets) b.sprite.destroy();
     for (const b of this.enemyBullets) b.sprite.destroy();
