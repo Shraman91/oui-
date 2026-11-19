@@ -11,13 +11,8 @@ export const SENSORBAR_CONSTANTS = {
   maxSensitivity: 2.5,
 
   // Smoothing & dead zone
-  smoothingAlpha: 0.28,      // Exponential Moving Average weight (0.28 is responsive without jitter)
-  deadZone: 0.002,           // Normalized screen distance under which cursor holds still
-
-  // Complementary filter weights
-  gyroWeight: 0.94,          // Gyroscope high-pass response weight (responsiveness)
-  orientationWeight: 0.06,   // Accelerometer/orientation low-pass drift correction weight
-  maxDeltaTimeSec: 0.1,      // Reset filter if packet gap exceeds 100ms
+  smoothingAlpha: 0.32,      // Exponential Moving Average weight (buttery smooth and instant response)
+  deadZone: 0.0015,          // Normalized screen distance under which cursor holds still
 
   // Screen clamping bounds
   screenMinX: 0.0,
@@ -77,55 +72,28 @@ export class SensorBar {
 
     this.rawAngles = { yaw: rawYaw, pitch: rawPitch, roll: rawRoll };
 
-    // 1. Complementary Filter (Fuse gyro rate with absolute orientation)
-    const hasGyro =
-      packet.rotationRate &&
-      (Math.abs(packet.rotationRate.alpha) > 0.001 ||
-        Math.abs(packet.rotationRate.beta) > 0.001 ||
-        Math.abs(packet.rotationRate.gamma) > 0.001);
+    // Modern mobile devices (iOS / Android) already perform hardware IMU Kalman sensor fusion.
+    // Tracking raw orientation directly provides instantaneous pointer response without filter drag.
+    this.filteredAngles.yaw = rawYaw;
+    this.filteredAngles.pitch = rawPitch;
+    this.filteredAngles.roll = rawRoll;
 
-    if (this.isCalibrated && hasGyro && dt < this.constants.maxDeltaTimeSec && dt > 0.001) {
-      const gyroWeight = this.constants.gyroWeight;
-
-      // Predicted angle using gyro rate integration (rotationRate is in deg/s)
-      const gyroDeltaYaw = (packet.rotationRate?.alpha || 0) * dt;
-      const gyroDeltaPitch = (packet.rotationRate?.beta || 0) * dt;
-      const gyroDeltaRoll = (packet.rotationRate?.gamma || 0) * dt;
-
-      const predictedYaw = this.filteredAngles.yaw + gyroDeltaYaw;
-      const predictedPitch = this.filteredAngles.pitch + gyroDeltaPitch;
-      const predictedRoll = this.filteredAngles.roll + gyroDeltaRoll;
-
-      // Wrapped yaw error [-180, 180]
-      const yawError = ((rawYaw - predictedYaw + 540) % 360) - 180;
-      this.filteredAngles.yaw = (predictedYaw + (1 - gyroWeight) * yawError + 360) % 360;
-
-      // Pitch and roll complementary blend
-      this.filteredAngles.pitch = gyroWeight * predictedPitch + (1 - gyroWeight) * rawPitch;
-      this.filteredAngles.roll = gyroWeight * predictedRoll + (1 - gyroWeight) * rawRoll;
-    } else {
-      // First packet or gyro unavailable: Direct orientation assignment
-      this.filteredAngles.yaw = rawYaw;
-      this.filteredAngles.pitch = rawPitch;
-      this.filteredAngles.roll = rawRoll;
-    }
-
-    // 2. Auto-center on the very first packet
+    // Auto-center on the very first packet
     if (!this.isCalibrated) {
       this.recenter();
     }
 
-    // 3. Calculate angular deltas relative to center
+    // 1. Calculate angular deltas relative to calibrated center
     // Wrapped yaw delta [-180, 180]
     const deltaYaw = ((this.filteredAngles.yaw - this.centerAngles.yaw + 540) % 360) - 180;
     const deltaPitch = this.filteredAngles.pitch - this.centerAngles.pitch;
 
-    // 4. Map angular deltas to screen space (0.0 to 1.0)
+    // 2. Map angular deltas to screen space (0.0 to 1.0)
     const effectiveYawRange = this.constants.yawRangeDeg / this.sensitivity;
     const effectivePitchRange = this.constants.pitchRangeDeg / this.sensitivity;
 
     // Aiming right (positive yaw) -> cursor moves right (positive X)
-    // Aiming down (forward tilt / decreased pitch) -> cursor moves down (positive Y)
+    // Aiming down (tilting phone forward / lower pitch) -> cursor moves down (positive Y)
     let targetX = 0.5 + deltaYaw / effectiveYawRange;
     let targetY = 0.5 - deltaPitch / effectivePitchRange;
 
@@ -133,7 +101,7 @@ export class SensorBar {
     targetX = Math.max(this.constants.screenMinX, Math.min(this.constants.screenMaxX, targetX));
     targetY = Math.max(this.constants.screenMinY, Math.min(this.constants.screenMaxY, targetY));
 
-    // 5. Dead zone filter (eliminates micro-jitter when holding still)
+    // 3. Dead zone filter (eliminates micro-tremors when holding phone still)
     const dx = targetX - this.pointer.x;
     const dy = targetY - this.pointer.y;
     const dist = Math.hypot(dx, dy);
@@ -143,12 +111,12 @@ export class SensorBar {
       targetY = this.pointer.y;
     }
 
-    // 6. Exponential Moving Average (EMA) smoothing
+    // 4. Exponential Moving Average (EMA) smoothing for rock-steady motion
     const alpha = this.constants.smoothingAlpha;
     const newX = this.pointer.x + alpha * (targetX - this.pointer.x);
     const newY = this.pointer.y + alpha * (targetY - this.pointer.y);
 
-    // 7. Calculate pointer velocity
+    // 5. Calculate pointer velocity
     if (dt > 0.001) {
       this.pointerVelocity.x = (newX - this.pointer.x) / dt;
       this.pointerVelocity.y = (newY - this.pointer.y) / dt;

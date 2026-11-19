@@ -578,6 +578,7 @@
     <div class="controller-view" id="controllerView">
       <div class="telemetry-bar">
         <div><span class="status-dot-mini"></span><span id="telRemoteId">Remote 1</span></div>
+        <div id="telMotion">Aim: 0°/0°</div>
         <div id="telHz">60 Hz</div>
         <div id="telPing">Ping: -- ms</div>
       </div>
@@ -687,6 +688,7 @@
       const powerBtn = document.getElementById('powerBtn');
       const topRecenterBtn = document.getElementById('topRecenterBtn');
       const telRemoteId = document.getElementById('telRemoteId');
+      const telMotion = document.getElementById('telMotion');
       const telHz = document.getElementById('telHz');
       const telPing = document.getElementById('telPing');
 
@@ -790,15 +792,23 @@
 
         if (!motionStarted) {
           window.addEventListener('deviceorientation', handleOrientation, true);
+          window.addEventListener('deviceorientationabsolute', handleOrientation, true);
           window.addEventListener('devicemotion', handleMotion, true);
           motionStarted = true;
+
+          // Live phone-side telemetry preview
+          setInterval(() => {
+            if (telMotion) {
+              telMotion.textContent = `${sensorData.orientation.alpha.toFixed(0)}° / ${sensorData.orientation.beta.toFixed(0)}°`;
+            }
+          }, 150);
         }
       }
 
       function handleOrientation(event) {
-        sensorData.orientation.alpha = event.alpha || 0;
-        sensorData.orientation.beta = event.beta || 0;
-        sensorData.orientation.gamma = event.gamma || 0;
+        if (event.alpha !== null && event.alpha !== undefined) sensorData.orientation.alpha = event.alpha;
+        if (event.beta !== null && event.beta !== undefined) sensorData.orientation.beta = event.beta;
+        if (event.gamma !== null && event.gamma !== undefined) sensorData.orientation.gamma = event.gamma;
       }
 
       function handleMotion(event) {
@@ -815,9 +825,18 @@
         }
 
         if (event.accelerationIncludingGravity) {
-          sensorData.accelG.x = event.accelerationIncludingGravity.x || 0;
-          sensorData.accelG.y = event.accelerationIncludingGravity.y || 0;
-          sensorData.accelG.z = event.accelerationIncludingGravity.z || 0;
+          const gx = event.accelerationIncludingGravity.x || 0;
+          const gy = event.accelerationIncludingGravity.y || 0;
+          const gz = event.accelerationIncludingGravity.z || 0;
+          sensorData.accelG.x = gx;
+          sensorData.accelG.y = gy;
+          sensorData.accelG.z = gz;
+
+          // Accelerometer fallback if orientation is zero or blocked
+          if (sensorData.orientation.beta === 0 && sensorData.orientation.gamma === 0 && (gx !== 0 || gy !== 0 || gz !== 0)) {
+            sensorData.orientation.beta = Math.atan2(gy, Math.sqrt(gx * gx + gz * gz)) * (180 / Math.PI);
+            sensorData.orientation.gamma = Math.atan2(-gx, gz) * (180 / Math.PI);
+          }
         }
       }
 

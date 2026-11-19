@@ -42,6 +42,7 @@ export class InputManager {
   private pressBListeners = new Set<InputEventListener<void>>();
   private releaseAListeners = new Set<InputEventListener<void>>();
   private releaseBListeners = new Set<InputEventListener<void>>();
+  private rumbleListeners = new Set<(strength: number, durationMs: number) => void>();
 
   private providers: Map<string, InputProvider> = new Map();
   private activeProvider: InputProvider | null = null;
@@ -174,6 +175,20 @@ export class InputManager {
         this.releaseBListeners.delete(listener as InputEventListener<void>);
         break;
     }
+  }
+
+  /**
+   * Triggers haptic rumble on the active controller (phone).
+   */
+  public rumble(strength = 1.0, durationMs = 150): void {
+    for (const listener of this.rumbleListeners) {
+      listener(strength, durationMs);
+    }
+  }
+
+  public onRumble(listener: (strength: number, durationMs: number) => void): () => void {
+    this.rumbleListeners.add(listener);
+    return () => this.rumbleListeners.delete(listener);
   }
 
   /**
