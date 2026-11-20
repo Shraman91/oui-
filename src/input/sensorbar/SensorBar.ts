@@ -2,19 +2,26 @@ import type { SensorPacket } from '../network/types';
 
 export const SENSORBAR_CONSTANTS = {
   // Field of view / angle span to cover the full screen
-  yawRangeDeg: 54,           // Natural comfortable wrist arc: ±27° left/right covers full screen
-  pitchRangeDeg: 38,         // ±19° up/down covers full screen height
+  yawRangeDeg: 60,           // ±30° natural wrist arc for comfortable aiming
+  pitchRangeDeg: 42,         // ±21° up/down
 
   // Sensitivity bounds
   defaultSensitivity: 1.0,
   minSensitivity: 0.4,
   maxSensitivity: 2.5,
 
-  // Adaptive smoothing & dead zones (eliminates tremors while staying snappy)
-  minSmoothingAlpha: 0.10,   // Heavy stabilization when holding still / precision pointing
-  maxSmoothingAlpha: 0.55,   // High responsiveness when sweeping / moving quickly
-  screenDeadZone: 0.0075,    // ~12-15 pixels deadband: locks cursor rock-still on buttons/targets
-  angleDeadZoneDeg: 0.22,    // Sub-0.22° micro-noise ignored to reject IMU sensor tremble
+  // 3-stage stabilization pipeline
+  // Stage 1 (angle pre-filter): EMA coefficient on the raw angle stream
+  angleEmaCoeff: 0.18,       // Slow, stabilizing: only 18% of new angle per tick
+  // Stage 2 (angle deadzone): Below this angular change, filtered angles do NOT update
+  angleDeadZoneDeg: 0.60,    // 0.60° — absorbs hand tremor + cheap IMU noise
+  // Stage 3 (screen deadzone): Below this normalized distance, cursor HOLDS position
+  screenDeadZone: 0.020,     // ~0.020 = ~38px on 1920px screen. Rock-solid stillness.
+  // Stage 4 (adaptive EMA on screen coords)
+  minSmoothingAlpha: 0.05,   // Nearly frozen when barely moving
+  maxSmoothingAlpha: 0.50,   // Snappy when making big sweeps
+  // Speed threshold scale: dist * speedScale must reach 1.0 for max responsiveness
+  speedScale: 6.0,
 
   // Screen clamping bounds
   screenMinX: 0.0,
@@ -23,10 +30,10 @@ export const SENSORBAR_CONSTANTS = {
   screenMaxY: 1.0,
 
   // Gestures (Used in Step 4)
-  swingThreshold: 17.5,      // Acceleration magnitude (m/s²) threshold to trigger a swing
-  swingCooldownMs: 300,      // Minimum delay between consecutive swings
-  shakeThreshold: 24.0,      // Acceleration magnitude for shake gesture (clear canvas)
-  tiltNormalizationMaxDeg: 35 // ±35° mapped to -1..1 tilt
+  swingThreshold: 17.5,
+  swingCooldownMs: 300,
+  shakeThreshold: 24.0,
+  tiltNormalizationMaxDeg: 35
 } as const;
 
 export type SensorBarConfig = typeof SENSORBAR_CONSTANTS;
@@ -84,20 +91,22 @@ export class SensorBar {
       }
     }
 
-    // 1. Angular pre-filtering with wrapped delta to reject high-frequency IMU tremble
+    // 1. Angular pre-filter — EMA on angles, gated by deadzone
+    // This is the console-side "Stage 1+2": absorbs residual noise after phone smoothing.
     const dYaw = ((rawYaw - this.filteredAngles.yaw + 540) % 360) - 180;
     const dPitch = rawPitch - this.filteredAngles.pitch;
     const dRoll = rawRoll - this.filteredAngles.roll;
 
     const angleDeadzone = this.constants.angleDeadZoneDeg;
+    const angleEma = this.constants.angleEmaCoeff;
     if (Math.abs(dYaw) > angleDeadzone) {
-      this.filteredAngles.yaw = (this.filteredAngles.yaw + dYaw * 0.35 + 360) % 360;
+      this.filteredAngles.yaw = (this.filteredAngles.yaw + dYaw * angleEma + 360) % 360;
     }
     if (Math.abs(dPitch) > angleDeadzone) {
-      this.filteredAngles.pitch += dPitch * 0.35;
+      this.filteredAngles.pitch += dPitch * angleEma;
     }
     if (Math.abs(dRoll) > angleDeadzone) {
-      this.filteredAngles.roll += dRoll * 0.35;
+      this.filteredAngles.roll += dRoll * angleEma;
     }
 
     // 2. Calculate angular deltas relative to calibrated center
@@ -127,10 +136,10 @@ export class SensorBar {
       targetY = this.pointer.y;
     }
 
-    // 5. Adaptive 1-Euro style Dynamic EMA Smoothing
-    // Moving slowly / holding still -> heavy smoothing (minSmoothingAlpha)
-    // Moving quickly -> high responsiveness (maxSmoothingAlpha)
-    const speedFactor = Math.min(1.0, dist * 8.0);
+    // 5. Adaptive Dynamic EMA (1-Euro style)
+    // dist is in normalized screen space. At rest (<screenDeadZone) it's 0.
+    // scale goes 0→1 as motion increases, saturating at speedScale.
+    const speedFactor = Math.min(1.0, dist * this.constants.speedScale);
     const alpha = this.constants.minSmoothingAlpha + speedFactor * (this.constants.maxSmoothingAlpha - this.constants.minSmoothingAlpha);
 
     const newX = this.pointer.x + alpha * (targetX - this.pointer.x);

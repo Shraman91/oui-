@@ -1044,6 +1044,10 @@
       let prevRawAlpha = null;
       let prevRawBeta = null;
       let prevRawGamma = null;
+      // Heavier phone-side EMA: smoothed state persists between samples
+      let smoothedAlpha = null;
+      let smoothedBeta = null;
+      let smoothedGamma = null;
 
       function handleOrientation(event) {
         orientEventCount++;
@@ -1054,7 +1058,11 @@
         const rawB = event.beta;
         const rawG = typeof event.gamma === 'number' && !isNaN(event.gamma) ? event.gamma : 0;
 
-        if (prevRawAlpha === null) {
+        if (smoothedAlpha === null) {
+          // Bootstrap: set all state to first reading
+          smoothedAlpha = rawA;
+          smoothedBeta = rawB;
+          smoothedGamma = rawG;
           prevRawAlpha = rawA;
           prevRawBeta = rawB;
           prevRawGamma = rawG;
@@ -1064,25 +1072,27 @@
           return;
         }
 
-        // Calculate angular deltas with wrapping for alpha
+        // --- Stage 1: Thresholded Raw Delta (micro-noise floor: 0.30 deg) ---
         const dAlpha = ((rawA - prevRawAlpha + 540) % 360) - 180;
         const dBeta = rawB - prevRawBeta;
         const dGamma = rawG - prevRawGamma;
+        const noiseFloor = 0.30;
 
-        // Micro-deadband on the phone to cut out hardware electrical noise (< 0.12 deg)
-        if (Math.abs(dAlpha) > 0.12) {
-          prevRawAlpha = (prevRawAlpha + dAlpha * 0.5 + 360) % 360;
-        }
-        if (Math.abs(dBeta) > 0.12) {
-          prevRawBeta += dBeta * 0.5;
-        }
-        if (Math.abs(dGamma) > 0.12) {
-          prevRawGamma += dGamma * 0.5;
-        }
+        if (Math.abs(dAlpha) > noiseFloor) prevRawAlpha = (prevRawAlpha + dAlpha + 360) % 360;
+        if (Math.abs(dBeta) > noiseFloor) prevRawBeta += dBeta;
+        if (Math.abs(dGamma) > noiseFloor) prevRawGamma += dGamma;
 
-        sensorData.orientation.alpha = prevRawAlpha;
-        sensorData.orientation.beta = prevRawBeta;
-        sensorData.orientation.gamma = prevRawGamma;
+        // --- Stage 2: Heavy phone-side EMA (alpha=0.18 = very smooth, slow lag) ---
+        // This turns hand tremor into zero noise before the packet is even sent.
+        const EMA = 0.18;
+        const sdA = ((prevRawAlpha - smoothedAlpha + 540) % 360) - 180;
+        smoothedAlpha = (smoothedAlpha + sdA * EMA + 360) % 360;
+        smoothedBeta += (prevRawBeta - smoothedBeta) * EMA;
+        smoothedGamma += (prevRawGamma - smoothedGamma) * EMA;
+
+        sensorData.orientation.alpha = smoothedAlpha;
+        sensorData.orientation.beta = smoothedBeta;
+        sensorData.orientation.gamma = smoothedGamma;
       }
 
       function handleMotion(event) {
