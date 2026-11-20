@@ -921,8 +921,8 @@
 
       function attachSensors() {
         try {
+          // Listen to deviceorientation only (avoids conflicts with deviceorientationabsolute)
           window.addEventListener('deviceorientation', handleOrientation, { passive: true });
-          window.addEventListener('deviceorientationabsolute', handleOrientation, { passive: true });
           window.addEventListener('devicemotion', handleMotion, { passive: true });
         } catch (e) {
           console.warn('addEventListener error:', e);
@@ -1041,49 +1041,59 @@
         });
       }
 
+      let prevRawAlpha = null;
+      let prevRawBeta = null;
+      let prevRawGamma = null;
+
       function handleOrientation(event) {
         orientEventCount++;
-        if (typeof event.alpha === 'number' && !isNaN(event.alpha)) {
-          sensorData.orientation.alpha = event.alpha;
-          hasRealMotionEvents = true;
-          hasAlphaHeading = true;
+        if (typeof event.beta !== 'number' || isNaN(event.beta)) return;
+
+        hasRealMotionEvents = true;
+        const rawA = typeof event.alpha === 'number' && !isNaN(event.alpha) ? event.alpha : 0;
+        const rawB = event.beta;
+        const rawG = typeof event.gamma === 'number' && !isNaN(event.gamma) ? event.gamma : 0;
+
+        if (prevRawAlpha === null) {
+          prevRawAlpha = rawA;
+          prevRawBeta = rawB;
+          prevRawGamma = rawG;
+          sensorData.orientation.alpha = rawA;
+          sensorData.orientation.beta = rawB;
+          sensorData.orientation.gamma = rawG;
+          return;
         }
-        if (typeof event.beta === 'number' && !isNaN(event.beta)) {
-          sensorData.orientation.beta = event.beta;
-          hasRealMotionEvents = true;
+
+        // Calculate angular deltas with wrapping for alpha
+        const dAlpha = ((rawA - prevRawAlpha + 540) % 360) - 180;
+        const dBeta = rawB - prevRawBeta;
+        const dGamma = rawG - prevRawGamma;
+
+        // Micro-deadband on the phone to cut out hardware electrical noise (< 0.12 deg)
+        if (Math.abs(dAlpha) > 0.12) {
+          prevRawAlpha = (prevRawAlpha + dAlpha * 0.5 + 360) % 360;
         }
-        if (typeof event.gamma === 'number' && !isNaN(event.gamma)) {
-          sensorData.orientation.gamma = event.gamma;
-          hasRealMotionEvents = true;
-          // If alpha heading is missing, tilt roll (gamma) guides horizontal aim
-          if (!hasAlphaHeading) {
-            sensorData.orientation.alpha = (event.gamma * 1.5 + 360) % 360;
-          }
+        if (Math.abs(dBeta) > 0.12) {
+          prevRawBeta += dBeta * 0.5;
         }
+        if (Math.abs(dGamma) > 0.12) {
+          prevRawGamma += dGamma * 0.5;
+        }
+
+        sensorData.orientation.alpha = prevRawAlpha;
+        sensorData.orientation.beta = prevRawBeta;
+        sensorData.orientation.gamma = prevRawGamma;
       }
 
       function handleMotion(event) {
         motionEventCount++;
         const now = performance.now();
-        const dt = lastMotionTime > 0 ? (now - lastMotionTime) / 1000 : 0.016;
         lastMotionTime = now;
 
         if (event.rotationRate) {
-          const rAlpha = event.rotationRate.alpha || 0;
-          const rBeta = event.rotationRate.beta || 0;
-          const rGamma = event.rotationRate.gamma || 0;
-          sensorData.rotationRate.alpha = rAlpha;
-          sensorData.rotationRate.beta = rBeta;
-          sensorData.rotationRate.gamma = rGamma;
-
-          // Gyroscope yaw integration if compass heading is unavailable
-          if (!hasAlphaHeading && dt < 0.1) {
-            const gyroRate = Math.abs(rAlpha) > Math.abs(rGamma) ? rAlpha : rGamma;
-            if (Math.abs(gyroRate) > 0.4) {
-              sensorData.orientation.alpha = (sensorData.orientation.alpha + gyroRate * dt + 360) % 360;
-              hasRealMotionEvents = true;
-            }
-          }
+          sensorData.rotationRate.alpha = event.rotationRate.alpha || 0;
+          sensorData.rotationRate.beta = event.rotationRate.beta || 0;
+          sensorData.rotationRate.gamma = event.rotationRate.gamma || 0;
         }
 
         if (event.acceleration) {
@@ -1100,7 +1110,7 @@
           sensorData.accelG.y = gy;
           sensorData.accelG.z = gz;
 
-          // Accelerometer fallback if orientation is zero or blocked
+          // Accelerometer fallback only if orientation events never arrived
           if (!hasRealMotionEvents && (gx !== 0 || gy !== 0 || gz !== 0)) {
             sensorData.orientation.beta = Math.atan2(gy, Math.sqrt(gx * gx + gz * gz)) * (180 / Math.PI);
             sensorData.orientation.gamma = Math.atan2(-gx, gz) * (180 / Math.PI);

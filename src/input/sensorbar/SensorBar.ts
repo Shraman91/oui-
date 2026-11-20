@@ -2,17 +2,19 @@ import type { SensorPacket } from '../network/types';
 
 export const SENSORBAR_CONSTANTS = {
   // Field of view / angle span to cover the full screen
-  yawRangeDeg: 42,           // Moving ±21° left/right covers 100% of the screen width
-  pitchRangeDeg: 30,         // Moving ±15° up/down covers 100% of the screen height
+  yawRangeDeg: 54,           // Natural comfortable wrist arc: ±27° left/right covers full screen
+  pitchRangeDeg: 38,         // ±19° up/down covers full screen height
 
   // Sensitivity bounds
   defaultSensitivity: 1.0,
   minSensitivity: 0.4,
   maxSensitivity: 2.5,
 
-  // Smoothing & dead zone
-  smoothingAlpha: 0.32,      // Exponential Moving Average weight (buttery smooth and instant response)
-  deadZone: 0.0015,          // Normalized screen distance under which cursor holds still
+  // Adaptive smoothing & dead zones (eliminates tremors while staying snappy)
+  minSmoothingAlpha: 0.10,   // Heavy stabilization when holding still / precision pointing
+  maxSmoothingAlpha: 0.55,   // High responsiveness when sweeping / moving quickly
+  screenDeadZone: 0.0075,    // ~12-15 pixels deadband: locks cursor rock-still on buttons/targets
+  angleDeadZoneDeg: 0.22,    // Sub-0.22° micro-noise ignored to reject IMU sensor tremble
 
   // Screen clamping bounds
   screenMinX: 0.0,
@@ -72,25 +74,37 @@ export class SensorBar {
 
     this.rawAngles = { yaw: rawYaw, pitch: rawPitch, roll: rawRoll };
 
-    // Modern mobile devices (iOS / Android) already perform hardware IMU Kalman sensor fusion.
-    // Tracking raw orientation directly provides instantaneous pointer response without filter drag.
-    this.filteredAngles.yaw = rawYaw;
-    this.filteredAngles.pitch = rawPitch;
-    this.filteredAngles.roll = rawRoll;
-
     // Auto-center on the first packet that contains real orientation readings
     if (!this.isCalibrated) {
       if (Math.abs(rawYaw) > 0.001 || Math.abs(rawPitch) > 0.001 || Math.abs(rawRoll) > 0.001) {
-        this.recenter();
+        this.centerAngles.yaw = rawYaw;
+        this.centerAngles.pitch = rawPitch;
+        this.filteredAngles = { yaw: rawYaw, pitch: rawPitch, roll: rawRoll };
+        this.isCalibrated = true;
       }
     }
 
-    // 1. Calculate angular deltas relative to calibrated center
-    // Wrapped yaw delta [-180, 180]
+    // 1. Angular pre-filtering with wrapped delta to reject high-frequency IMU tremble
+    const dYaw = ((rawYaw - this.filteredAngles.yaw + 540) % 360) - 180;
+    const dPitch = rawPitch - this.filteredAngles.pitch;
+    const dRoll = rawRoll - this.filteredAngles.roll;
+
+    const angleDeadzone = this.constants.angleDeadZoneDeg;
+    if (Math.abs(dYaw) > angleDeadzone) {
+      this.filteredAngles.yaw = (this.filteredAngles.yaw + dYaw * 0.35 + 360) % 360;
+    }
+    if (Math.abs(dPitch) > angleDeadzone) {
+      this.filteredAngles.pitch += dPitch * 0.35;
+    }
+    if (Math.abs(dRoll) > angleDeadzone) {
+      this.filteredAngles.roll += dRoll * 0.35;
+    }
+
+    // 2. Calculate angular deltas relative to calibrated center
     const deltaYaw = ((this.filteredAngles.yaw - this.centerAngles.yaw + 540) % 360) - 180;
     const deltaPitch = this.filteredAngles.pitch - this.centerAngles.pitch;
 
-    // 2. Map angular deltas to screen space (0.0 to 1.0)
+    // 3. Map angular deltas to screen space (0.0 to 1.0)
     const effectiveYawRange = this.constants.yawRangeDeg / this.sensitivity;
     const effectivePitchRange = this.constants.pitchRangeDeg / this.sensitivity;
 
@@ -103,22 +117,26 @@ export class SensorBar {
     targetX = Math.max(this.constants.screenMinX, Math.min(this.constants.screenMaxX, targetX));
     targetY = Math.max(this.constants.screenMinY, Math.min(this.constants.screenMaxY, targetY));
 
-    // 3. Dead zone filter (eliminates micro-tremors when holding phone still)
+    // 4. Screen-space Dead Zone (locks cursor rock-solid when holding phone still)
     const dx = targetX - this.pointer.x;
     const dy = targetY - this.pointer.y;
     const dist = Math.hypot(dx, dy);
 
-    if (dist < this.constants.deadZone) {
+    if (dist < this.constants.screenDeadZone) {
       targetX = this.pointer.x;
       targetY = this.pointer.y;
     }
 
-    // 4. Exponential Moving Average (EMA) smoothing for rock-steady motion
-    const alpha = this.constants.smoothingAlpha;
+    // 5. Adaptive 1-Euro style Dynamic EMA Smoothing
+    // Moving slowly / holding still -> heavy smoothing (minSmoothingAlpha)
+    // Moving quickly -> high responsiveness (maxSmoothingAlpha)
+    const speedFactor = Math.min(1.0, dist * 8.0);
+    const alpha = this.constants.minSmoothingAlpha + speedFactor * (this.constants.maxSmoothingAlpha - this.constants.minSmoothingAlpha);
+
     const newX = this.pointer.x + alpha * (targetX - this.pointer.x);
     const newY = this.pointer.y + alpha * (targetY - this.pointer.y);
 
-    // 5. Calculate pointer velocity
+    // 6. Calculate pointer velocity
     if (dt > 0.001) {
       this.pointerVelocity.x = (newX - this.pointer.x) / dt;
       this.pointerVelocity.y = (newY - this.pointer.y) / dt;
